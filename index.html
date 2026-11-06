@@ -601,7 +601,7 @@ button, select, input {
   <!-- FIREBASE & APP SCRIPT -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
     const N = 'http://www.w3.org/2000/svg', cx = 250, cy = 230;
@@ -681,9 +681,6 @@ button, select, input {
       db = getFirestore(app);
       auth = getAuth(app);
       
-      // PERSISTENT AUTH STATE: Ensures session stays valid across tabs/devices
-      auth.setPersistence && auth.setPersistence(import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js").then(m => m.browserLocalPersistence)).catch(() => {});
-
       signInAnonymously(auth).then(() => {
         isFirebaseReady = true;
         setupFirestoreListener();
@@ -707,13 +704,10 @@ button, select, input {
               appState.players = remote.players || [];
               appState.weeks = remote.weeks || [];
               
-              // Automatically check global cloud admin flag if someone logged in elsewhere
               if (remote.adminActive === true && !appState.isAdmin) {
                 appState.isAdmin = true;
                 updateAuthUI();
-                showToast('Admin session active from cloud sync!', 'success');
               } else if (remote.adminActive === false && appState.isAdmin) {
-                // If logged out elsewhere, sync logout
                 appState.isAdmin = false;
                 updateAuthUI();
               }
@@ -766,7 +760,6 @@ button, select, input {
           console.warn("Failed to parse local storage:", e);
         }
       }
-      // Also check sessionStorage for active admin session in this browser tab
       if (sessionStorage.getItem('maarif_admin_active') === 'true') {
         appState.isAdmin = true;
       }
@@ -790,7 +783,6 @@ button, select, input {
       }, 3000);
     }
 
-    // LEAGUE CALCULATIONS
     function calculateStandings() {
       const standings = {};
       appState.classes.forEach(c => {
@@ -1040,7 +1032,6 @@ button, select, input {
       }
     }
 
-    // TAB MANAGEMENT
     function switchTab(tabId) {
       ['league', 'fixtures', 'classes', 'scorers', 'assists', 'admin'].forEach(t => {
         const tabEl = document.getElementById(`tab-${t}`);
@@ -1059,7 +1050,6 @@ button, select, input {
       }
     }
 
-    // ADMIN AUTHENTICATION
     function updateAuthUI() {
       const dot = document.getElementById('authDot');
       const text = document.getElementById('authStatusText');
@@ -1098,7 +1088,7 @@ button, select, input {
       if (user === 'Admin_Sarxan' && pass === '097Sarxan.hoca/87') {
         appState.isAdmin = true;
         sessionStorage.setItem('maarif_admin_active', 'true');
-        saveState(); // Saves adminActive: true to cloud so ALL devices instantly unlock admin
+        saveState();
         updateAuthUI();
         showToast('Logged in as Admin_Sarxan (Synced across devices!)', 'success');
         return true;
@@ -1110,12 +1100,11 @@ button, select, input {
     function logoutAdmin() {
       appState.isAdmin = false;
       sessionStorage.removeItem('maarif_admin_active');
-      saveState(); // Saves adminActive: false to cloud so ALL devices sync logout
+      saveState();
       updateAuthUI();
       showToast('Logged out successfully');
     }
 
-    // GLOBAL ACTIONS & EXPORTS
     window.openAddMatchModal = function(weekId) {
       const week = appState.weeks.find(w => w.id === weekId);
       if (!week) return;
@@ -1259,12 +1248,10 @@ button, select, input {
       renderAssists();
       updateAdminStats();
 
-      // Navigation listeners
       ['league', 'fixtures', 'classes', 'scorers', 'assists', 'admin'].forEach(t => {
         document.getElementById(`tabBtn-${t}`)?.addEventListener('click', () => switchTab(t));
       });
 
-      // Login buttons
       document.getElementById('btnAuthAction')?.addEventListener('click', () => {
         if (appState.isAdmin) {
           logoutAdmin();
@@ -1307,7 +1294,6 @@ button, select, input {
         logoutAdmin();
       });
 
-      // Add Week Modal
       document.getElementById('btnOpenAddWeekModal')?.addEventListener('click', () => {
         document.getElementById('addWeekModal').classList.remove('hidden');
         document.getElementById('addWeekModal').classList.add('flex');
@@ -1329,7 +1315,6 @@ button, select, input {
         }
       });
 
-      // Add Class Modal
       document.getElementById('btnOpenAddClassModal')?.addEventListener('click', () => {
         document.getElementById('addClassModal').classList.remove('hidden');
         document.getElementById('addClassModal').classList.add('flex');
@@ -1357,7 +1342,6 @@ button, select, input {
         }
       });
 
-      // Add Match
       document.getElementById('btnCloseAddMatchModal')?.addEventListener('click', () => {
         document.getElementById('addMatchModal').classList.add('hidden');
       });
@@ -1393,7 +1377,6 @@ button, select, input {
         }
       });
 
-      // Edit Match Result Modal
       document.getElementById('btnCloseEditMatchModal')?.addEventListener('click', () => {
         document.getElementById('editMatchModal').classList.add('hidden');
       });
@@ -1419,7 +1402,6 @@ button, select, input {
         }
       });
 
-      // Add Player Modal
       document.getElementById('btnCloseAddPlayerModal')?.addEventListener('click', () => {
         document.getElementById('addPlayerModal').classList.add('hidden');
       });
@@ -1446,7 +1428,6 @@ button, select, input {
         }
       });
 
-      // Clear Fixtures
       document.getElementById('btnClearFixtures')?.addEventListener('click', () => {
         if (confirm('Clear all scheduled weeks and matches?')) {
           appState.weeks = [];
@@ -1458,13 +1439,11 @@ button, select, input {
         }
       });
 
-      // Manual Save to Cloud Button in Admin Panel
       document.getElementById('btnAdminSaveCloud')?.addEventListener('click', async () => {
         await saveState();
         showToast('All changes saved to cloud!', 'success');
       });
 
-      // Reset All Data
       document.getElementById('btnAdminResetAll')?.addEventListener('click', () => {
         if (confirm('RESET ALL DATA? This cannot be undone.')) {
           appState.weeks = [];
@@ -1486,7 +1465,6 @@ button, select, input {
         }
       });
 
-      // Export HTML feature
       document.getElementById('btnExportHtml')?.addEventListener('click', () => {
         const blob = new Blob([document.documentElement.outerHTML], { type: "text/html" });
         const a = document.createElement("a");
@@ -1496,7 +1474,6 @@ button, select, input {
         showToast('Downloaded updated index.html!', 'success');
       });
 
-      // Theme toggle
       const toggleTheme = () => {
         document.documentElement.classList.toggle('dark');
         document.documentElement.classList.toggle('light');
@@ -1505,17 +1482,14 @@ button, select, input {
       document.getElementById('btnToggleTheme')?.addEventListener('click', toggleTheme);
       document.getElementById('btnToggleThemeMob')?.addEventListener('click', toggleTheme);
 
-      // Search Filter
       document.getElementById('classSearchInput')?.addEventListener('input', renderClasses);
 
-      // Refresh Button
       document.getElementById('btnRefreshLeague')?.addEventListener('click', () => {
         renderLeagueTable();
         showToast('Standings refreshed', 'info');
       });
     }
 
-    // Portal enter listener
     document.getElementById('btnEnterPortal')?.addEventListener('click', enterPortal);
   </script>
 </body>
