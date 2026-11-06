@@ -5,15 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Maarif Schools Cup Baku 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
     <!-- Firebase SDKs -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
       import {
         getFirestore,
         doc,
+        onSnapshot,
         setDoc,
         getDoc,
-        onSnapshot,
       } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
       const firebaseConfig = {
@@ -29,59 +34,781 @@
       const app = initializeApp(firebaseConfig);
       const db = getFirestore(app);
 
-      window.db = db;
-      window.firebaseEnabled = true;
-      console.log("Firebase Connected Successfully!");
+      const docRef = doc(
+        db,
+        "artifacts",
+        firebaseConfig.appId,
+        "public_data",
+        "tournament_state",
+      );
+
+      window.saveToCloud = async function (data) {
+        try {
+          await setDoc(docRef, data);
+        } catch (err) {
+          console.error("Firestore sync error:", err);
+        }
+      };
+
+      onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const cloudData = docSnap.data();
+          if (cloudData && window.applyDataFromCloud) {
+            window.applyDataFromCloud(cloudData);
+          }
+        }
+      });
     </script>
   </head>
-  <body class="bg-slate-950 text-slate-100 min-h-screen">
-    <div id="app" class="max-w-7xl mx-auto px-4 py-8">
+  <body class="bg-slate-950 text-slate-100 min-h-screen font-sans">
+    <div class="max-w-7xl mx-auto px-4 py-6">
+      <!-- Header -->
       <header
-        class="flex justify-between items-center mb-8 border-b border-slate-800 pb-4"
+        class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 border-b border-slate-800 pb-6"
       >
-        <div>
-          <h1 class="text-3xl font-black tracking-wider text-teal-400">
-            MAARIF CUP 2026
-          </h1>
-          <p class="text-xs text-slate-400">
-            Class Championship • Real-Time Cloud Sync Active
-          </p>
+        <div class="flex items-center gap-3">
+          <div class="bg-teal-500 text-slate-950 p-3 rounded-xl font-bold">
+            <i class="fa-solid fa-trophy text-2xl"></i>
+          </div>
+          <div>
+            <h1 class="text-2xl font-black tracking-wider text-teal-400">
+              MAARIF CUP
+              <span
+                class="text-xs bg-teal-500/10 text-teal-400 px-2 py-0.5 rounded border border-teal-500/20"
+                >2026</span
+              >
+            </h1>
+            <p class="text-xs text-slate-400">
+              Class Championship • Real-time cloud sync active
+            </p>
+          </div>
         </div>
-        <div
-          id="admin-badge"
-          class="text-sm px-3 py-1 rounded bg-slate-900 border border-slate-700"
+
+        <!-- Navigation Tabs -->
+        <nav
+          class="flex flex-wrap justify-center gap-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-800"
         >
-          Guest Mode
+          <button
+            onclick="switchTab('table')"
+            id="tab-table"
+            class="px-4 py-2 rounded-lg text-sm font-semibold transition bg-teal-500 text-slate-950"
+          >
+            <i class="fa-solid fa-list-ol mr-1.5"></i> Table
+          </button>
+          <button
+            onclick="switchTab('fixtures')"
+            id="tab-fixtures"
+            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition"
+          >
+            <i class="fa-solid fa-calendar-days mr-1.5"></i> Fixtures
+          </button>
+          <button
+            onclick="switchTab('teams')"
+            id="tab-teams"
+            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition"
+          >
+            <i class="fa-solid fa-people-group mr-1.5"></i> Teams
+          </button>
+          <button
+            onclick="switchTab('scorers')"
+            id="tab-scorers"
+            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition"
+          >
+            <i class="fa-solid fa-futbol mr-1.5"></i> Scorers
+          </button>
+          <button
+            onclick="switchTab('assists')"
+            id="tab-assists"
+            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition"
+          >
+            <i class="fa-solid fa-hands-holding-circle mr-1.5"></i> Assists
+          </button>
+          <button
+            onclick="switchTab('admin')"
+            id="tab-admin"
+            class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition"
+          >
+            <i class="fa-solid fa-user-gear mr-1.5"></i> Admin
+          </button>
+        </nav>
+
+        <!-- User Auth Status -->
+        <div class="flex items-center gap-3">
+          <span
+            id="role-badge"
+            class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700"
+            >● Guest</span
+          >
+          <button
+            id="auth-btn"
+            onclick="openAuthModal()"
+            class="bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold px-3 py-2 rounded-lg transition"
+          >
+            Admin Login
+          </button>
         </div>
       </header>
 
-      <main class="space-y-6">
-        <div
-          class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl"
-        >
-          <h2 class="text-xl font-bold mb-4 text-teal-300">
-            Premier League Table
-          </h2>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-800 text-slate-400 text-sm">
-                  <th class="py-3 px-4">POS</th>
-                  <th class="py-3 px-4">CLASS</th>
-                  <th class="py-3 px-4 text-center">P</th>
-                  <th class="py-3 px-4 text-center">W</th>
-                  <th class="py-3 px-4 text-center">D</th>
-                  <th class="py-3 px-4 text-center">L</th>
-                  <th class="py-3 px-4 text-center">PTS</th>
+      <!-- Main Content Views -->
+      <main>
+        <!-- Table View -->
+        <section id="view-table" class="space-y-4">
+          <div
+            class="flex justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl"
+          >
+            <h2 class="text-lg font-bold text-teal-300 flex items-center gap-2">
+              <i class="fa-solid fa-trophy text-amber-400"></i> Standings Table
+            </h2>
+            <button
+              onclick="renderAll()"
+              class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg border border-slate-700 transition"
+            >
+              <i class="fa-solid fa-rotate mr-1"></i> Refresh
+            </button>
+          </div>
+          <div
+            class="bg-slate-900 border border-slate-800 rounded-xl overflow-x-auto shadow-xl"
+          >
+            <table class="w-full text-left text-sm">
+              <thead
+                class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800"
+              >
+                <tr>
+                  <th class="p-4">POS</th>
+                  <th class="p-4">CLASS</th>
+                  <th class="p-4 text-center">P</th>
+                  <th class="p-4 text-center">W</th>
+                  <th class="p-4 text-center">D</th>
+                  <th class="p-4 text-center">L</th>
+                  <th class="p-4 text-center">GF</th>
+                  <th class="p-4 text-center">GA</th>
+                  <th class="p-4 text-center">GD</th>
+                  <th class="p-4 text-center font-bold text-teal-400">PTS</th>
                 </tr>
               </thead>
-              <tbody id="standings-body">
-                <!-- Dynamic rows injected here -->
-              </tbody>
+              <tbody
+                id="standings-body"
+                class="divide-y divide-slate-800/50"
+              ></tbody>
             </table>
           </div>
-        </div>
+        </section>
+
+        <!-- Fixtures View -->
+        <section id="view-fixtures" class="hidden space-y-4">
+          <div
+            class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex justify-between items-center"
+          >
+            <h2 class="text-lg font-bold text-teal-300">
+              <i class="fa-solid fa-calendar-days text-teal-400 mr-2"></i> Match
+              Schedule
+            </h2>
+            <div class="flex gap-2" id="week-selector"></div>
+          </div>
+          <div
+            id="fixtures-container"
+            class="grid grid-cols-1 md:grid-cols-2 gap-4"
+          ></div>
+        </section>
+
+        <!-- Teams View -->
+        <section id="view-teams" class="hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <h2 class="text-lg font-bold text-teal-300">
+              <i class="fa-solid fa-people-group text-teal-400 mr-2"></i>
+              Participating Classes
+            </h2>
+          </div>
+          <div
+            id="teams-container"
+            class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+          ></div>
+        </section>
+
+        <!-- Scorers View -->
+        <section id="view-scorers" class="hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <h2 class="text-lg font-bold text-teal-300">
+              <i class="fa-solid fa-futbol text-teal-400 mr-2"></i> Top Scorers
+            </h2>
+          </div>
+          <div
+            class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"
+          >
+            <table class="w-full text-left text-sm">
+              <thead
+                class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800"
+              >
+                <tr>
+                  <th class="p-4">Rank</th>
+                  <th class="p-4">Player</th>
+                  <th class="p-4">Team</th>
+                  <th class="p-4 text-center font-bold text-teal-400">Goals</th>
+                </tr>
+              </thead>
+              <tbody
+                id="scorers-body"
+                class="divide-y divide-slate-800/50"
+              ></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Assists View -->
+        <section id="view-assists" class="hidden space-y-4">
+          <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+            <h2 class="text-lg font-bold text-teal-300">
+              <i
+                class="fa-solid fa-hands-holding-circle text-teal-400 mr-2"
+              ></i>
+              Top Assists
+            </h2>
+          </div>
+          <div
+            class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden"
+          >
+            <table class="w-full text-left text-sm">
+              <thead
+                class="bg-slate-950 text-slate-400 text-xs uppercase border-b border-slate-800"
+              >
+                <tr>
+                  <th class="p-4">Rank</th>
+                  <th class="p-4">Player</th>
+                  <th class="p-4">Team</th>
+                  <th class="p-4 text-center font-bold text-teal-400">
+                    Assists
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="assists-body"
+                class="divide-y divide-slate-800/50"
+              ></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Admin View -->
+        <section id="view-admin" class="hidden space-y-6">
+          <div
+            id="admin-lock-screen"
+            class="bg-slate-900 border border-slate-800 p-8 rounded-xl text-center space-y-4 max-w-md mx-auto"
+          >
+            <i class="fa-solid fa-lock text-4xl text-amber-400"></i>
+            <h3 class="text-xl font-bold">Admin Authentication Required</h3>
+            <p class="text-sm text-slate-400">
+              Please log in as Sarxan Hoca to access management controls.
+            </p>
+            <button
+              onclick="openAuthModal()"
+              class="bg-teal-500 text-slate-950 font-bold px-4 py-2 rounded-lg hover:bg-teal-400 transition"
+            >
+              Log In Now
+            </button>
+          </div>
+
+          <div id="admin-panel" class="hidden space-y-6">
+            <div
+              class="flex flex-wrap justify-between items-center bg-slate-900 border border-slate-800 p-4 rounded-xl gap-4"
+            >
+              <div>
+                <h2 class="text-lg font-bold text-teal-300">
+                  <i class="fa-solid fa-user-gear text-teal-400 mr-2"></i> Admin
+                  Control Center
+                </h2>
+                <p class="text-xs text-slate-400">Logged in as Sarxan Hoca</p>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  onclick="saveCurrentState()"
+                  class="bg-teal-500 hover:bg-teal-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-lg transition"
+                >
+                  <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Save All
+                  Changes to Cloud
+                </button>
+                <button
+                  onclick="exportHTML()"
+                  class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition"
+                >
+                  <i class="fa-solid fa-file-code mr-1.5"></i> Export Live Code
+                </button>
+              </div>
+            </div>
+
+            <!-- Manage Matches -->
+            <div
+              class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4"
+            >
+              <h3 class="font-bold text-slate-200">
+                <i class="fa-solid fa-pen-to-square text-teal-400 mr-2"></i> Add
+                / Edit Match Result
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <select
+                  id="admin-match-home"
+                  class="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm"
+                ></select>
+                <input
+                  id="admin-match-score1"
+                  type="number"
+                  min="0"
+                  placeholder="Home Score"
+                  class="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-center"
+                />
+                <input
+                  id="admin-match-score2"
+                  type="number"
+                  min="0"
+                  placeholder="Away Score"
+                  class="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm text-center"
+                />
+                <select
+                  id="admin-match-away"
+                  class="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm"
+                ></select>
+                <button
+                  onclick="addMatchResult()"
+                  class="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold px-4 py-2 rounded text-sm transition"
+                >
+                  Save Match
+                </button>
+              </div>
+            </div>
+
+            <!-- Add Team -->
+            <div
+              class="bg-slate-900 border border-slate-800 p-6 rounded-xl space-y-4"
+            >
+              <h3 class="font-bold text-slate-200">
+                <i class="fa-solid fa-plus text-teal-400 mr-2"></i> Add New
+                Class / Team
+              </h3>
+              <div class="flex gap-3">
+                <input
+                  id="new-team-name"
+                  type="text"
+                  placeholder="Team Name (e.g., 12A Class)"
+                  class="bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm flex-1"
+                />
+                <button
+                  onclick="addNewTeam()"
+                  class="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold px-4 py-2 rounded text-sm transition"
+                >
+                  Add Team
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
+
+    <!-- Auth Modal -->
+    <div
+      id="auth-modal"
+      class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 hidden"
+    >
+      <div
+        class="bg-slate-900 border border-slate-800 p-6 rounded-xl max-w-sm w-full space-y-4 shadow-2xl"
+      >
+        <h3
+          class="text-lg font-bold text-slate-100 flex items-center justify-between"
+        >
+          <span>Admin Login</span>
+          <button
+            onclick="closeAuthModal()"
+            class="text-slate-400 hover:text-slate-200"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </h3>
+        <div class="space-y-3">
+          <input
+            id="auth-user"
+            type="text"
+            placeholder="Username"
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm"
+          />
+          <input
+            id="auth-pass"
+            type="password"
+            placeholder="Password"
+            class="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-sm"
+          />
+          <p id="auth-error" class="text-xs text-rose-500 hidden">
+            Invalid credentials
+          </p>
+          <button
+            onclick="handleLogin()"
+            class="w-full bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold py-2 rounded text-sm transition"
+          >
+            Log In
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let state = {
+        teams: [
+          {
+            id: "9a",
+            name: "9A Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "9b",
+            name: "9B Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "10a",
+            name: "10A Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "10b",
+            name: "10B Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "11a",
+            name: "11A Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "11b",
+            name: "11B Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "8a",
+            name: "8A Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+          {
+            id: "7a",
+            name: "7A Class",
+            p: 0,
+            w: 0,
+            d: 0,
+            l: 0,
+            gf: 0,
+            ga: 0,
+            pts: 0,
+            players: [],
+          },
+        ],
+        matches: [],
+        scorers: [],
+        assists: [],
+        isAdmin: false,
+        selectedWeek: 1,
+      };
+
+      window.applyDataFromCloud = function (data) {
+        if (data && data.teams) {
+          state.teams = data.teams || state.teams;
+          state.matches = data.matches || [];
+          state.scorers = data.scorers || [];
+          state.assists = data.assists || [];
+          renderAll();
+        }
+      };
+
+      function switchTab(tabId) {
+        ["table", "fixtures", "teams", "scorers", "assists", "admin"].forEach(
+          (t) => {
+            document.getElementById(`view-${t}`).classList.add("hidden");
+            document.getElementById(`tab-${t}`).className =
+              "px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-slate-200 transition";
+          },
+        );
+        document.getElementById(`view-${tabId}`).classList.remove("hidden");
+        document.getElementById(`tab-${tabId}`).className =
+          "px-4 py-2 rounded-lg text-sm font-semibold transition bg-teal-500 text-slate-950";
+      }
+
+      function renderAll() {
+        renderTable();
+        renderFixtures();
+        renderTeams();
+        renderScorers();
+        renderAssists();
+        populateAdminSelects();
+      }
+
+      function renderTable() {
+        const tbody = document.getElementById("standings-body");
+        const sorted = [...state.teams].sort(
+          (a, b) => b.pts - a.pts || b.gf - b.ga - (a.gf - a.ga) || b.gf - a.gf,
+        );
+        tbody.innerHTML = sorted
+          .map(
+            (t, i) => `
+                <tr class="hover:bg-slate-900/50">
+                    <td class="p-4 font-bold text-slate-400">${i + 1}</td>
+                    <td class="p-4 font-bold text-slate-100">${t.name}</td>
+                    <td class="p-4 text-center">${t.p}</td>
+                    <td class="p-4 text-center text-teal-400">${t.w}</td>
+                    <td class="p-4 text-center text-amber-400">${t.d}</td>
+                    <td class="p-4 text-center text-rose-400">${t.l}</td>
+                    <td class="p-4 text-center">${t.gf}</td>
+                    <td class="p-4 text-center">${t.ga}</td>
+                    <td class="p-4 text-center">${t.gf - t.ga}</td>
+                    <td class="p-4 text-center font-bold text-teal-400">${t.pts}</td>
+                </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function renderFixtures() {
+        const container = document.getElementById("fixtures-container");
+        if (state.matches.length === 0) {
+          container.innerHTML = `<div class="col-span-2 text-center text-slate-500 py-8">No matches recorded yet.</div>`;
+          return;
+        }
+        container.innerHTML = state.matches
+          .map(
+            (m) => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+                    <span class="font-bold w-1/3 text-right">${m.home}</span>
+                    <span class="bg-slate-950 px-3 py-1 rounded text-teal-400 font-black">${m.score1} - ${m.score2}</span>
+                    <span class="font-bold w-1/3 text-left">${m.away}</span>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      function renderTeams() {
+        const container = document.getElementById("teams-container");
+        container.innerHTML = state.teams
+          .map(
+            (t) => `
+                <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl">
+                    <h3 class="font-bold text-teal-400">${t.name}</h3>
+                    <p class="text-xs text-slate-400 mt-1">Played: ${t.p} | Points: ${t.pts}</p>
+                </div>
+            `,
+          )
+          .join("");
+      }
+
+      function renderScorers() {
+        const tbody = document.getElementById("scorers-body");
+        if (state.scorers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No scorers registered yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = state.scorers
+          .map(
+            (s, i) => `
+                <tr>
+                    <td class="p-4 text-slate-400">${i + 1}</td>
+                    <td class="p-4 font-bold text-slate-100">${s.name}</td>
+                    <td class="p-4 text-slate-400">${s.team}</td>
+                    <td class="p-4 text-center font-bold text-teal-400">${s.goals}</td>
+                </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function renderAssists() {
+        const tbody = document.getElementById("assists-body");
+        if (state.assists.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-500">No assists registered yet.</td></tr>`;
+          return;
+        }
+        tbody.innerHTML = state.assists
+          .map(
+            (a, i) => `
+                <tr>
+                    <td class="p-4 text-slate-400">${i + 1}</td>
+                    <td class="p-4 font-bold text-slate-100">${a.name}</td>
+                    <td class="p-4 text-slate-400">${a.team}</td>
+                    <td class="p-4 text-center font-bold text-teal-400">${a.assists}</td>
+                </tr>
+            `,
+          )
+          .join("");
+      }
+
+      function populateAdminSelects() {
+        const home = document.getElementById("admin-match-home");
+        const away = document.getElementById("admin-match-away");
+        if (!home || !away) return;
+        const opts = state.teams
+          .map((t) => `<option value="${t.name}">${t.name}</option>`)
+          .join("");
+        home.innerHTML = opts;
+        away.innerHTML = opts;
+      }
+
+      function openAuthModal() {
+        document.getElementById("auth-modal").classList.remove("hidden");
+      }
+      function closeAuthModal() {
+        document.getElementById("auth-modal").classList.add("hidden");
+      }
+
+      function handleLogin() {
+        const user = document.getElementById("auth-user").value;
+        const pass = document.getElementById("auth-pass").value;
+        if (user === "Admin_Sarxan" && pass === "097Sarxan.hoca/87") {
+          state.isAdmin = true;
+          document.getElementById("role-badge").className =
+            "text-xs font-semibold px-2.5 py-1 rounded-full bg-teal-500/20 text-teal-400 border border-teal-500/30";
+          document.getElementById("role-badge").innerText =
+            "● Sarxan Hoca (Admin)";
+          document.getElementById("auth-btn").classList.add("hidden");
+          document.getElementById("admin-lock-screen").classList.add("hidden");
+          document.getElementById("admin-panel").classList.remove("hidden");
+          closeAuthModal();
+        } else {
+          document.getElementById("auth-error").classList.remove("hidden");
+        }
+      }
+
+      function addMatchResult() {
+        const home = document.getElementById("admin-match-home").value;
+        const away = document.getElementById("admin-match-away").value;
+        const score1 =
+          parseInt(document.getElementById("admin-match-score1").value) || 0;
+        const score2 =
+          parseInt(document.getElementById("admin-match-score2").value) || 0;
+
+        if (home === away) {
+          alert("Teams must be different!");
+          return;
+        }
+
+        state.matches.push({ home, away, score1, score2 });
+
+        const t1 = state.teams.find((t) => t.name === home);
+        const t2 = state.teams.find((t) => t.name === away);
+
+        if (t1 && t2) {
+          t1.p++;
+          t2.p++;
+          t1.gf += score1;
+          t1.ga += score2;
+          t2.gf += score2;
+          t2.ga += score1;
+
+          if (score1 > score2) {
+            t1.w++;
+            t1.pts += 3;
+            t2.l++;
+          } else if (score2 > score1) {
+            t2.w++;
+            t2.pts += 3;
+            t1.l++;
+          } else {
+            t1.d++;
+            t1.pts += 1;
+            t2.d++;
+            t2.pts += 1;
+          }
+        }
+
+        saveCurrentState();
+        renderAll();
+      }
+
+      function addNewTeam() {
+        const name = document.getElementById("new-team-name").value.trim();
+        if (!name) return;
+        state.teams.push({
+          id: name.toLowerCase().replace(/\s+/g, ""),
+          name,
+          p: 0,
+          w: 0,
+          d: 0,
+          l: 0,
+          gf: 0,
+          ga: 0,
+          pts: 0,
+          players: [],
+        });
+        document.getElementById("new-team-name").value = "";
+        saveCurrentState();
+        renderAll();
+      }
+
+      function saveCurrentState() {
+        if (window.saveToCloud) {
+          window.saveToCloud({
+            teams: state.teams,
+            matches: state.matches,
+            scorers: state.scorers,
+            assists: state.assists,
+          });
+        }
+      }
+
+      function exportHTML() {
+        const blob = new Blob([document.documentElement.outerHTML], {
+          type: "text/html",
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "index.html";
+        a.click();
+      }
+
+      renderAll();
+    </script>
   </body>
 </html>
