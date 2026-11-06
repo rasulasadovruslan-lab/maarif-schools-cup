@@ -379,6 +379,10 @@ button, select, input {
                   <span>Add Class Team</span>
                   <i class="fa-solid fa-plus text-maarifAccent"></i>
                 </button>
+                <button id="btnExportHtml" class="w-full py-2.5 px-3.5 rounded-xl bg-maarifAccent/10 hover:bg-maarifAccent/20 text-xs font-semibold transition text-left flex items-center justify-between text-maarifAccent border border-maarifAccent/20">
+                  <span>Export Live Code (index.html)</span>
+                  <i class="fa-solid fa-file-code"></i>
+                </button>
                 <button id="btnAdminResetAll" class="w-full py-2.5 px-3.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition text-left flex items-center justify-between text-red-500 border border-red-500/20">
                   <span>Reset All Tournament Data</span>
                   <i class="fa-solid fa-triangle-exclamation"></i>
@@ -687,7 +691,7 @@ button, select, input {
 
     function setupFirestoreListener() {
       if (!db || !auth.currentUser) return;
-      const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament_state');
+      const docRef = doc(db, 'artifacts', appId, 'public_data', 'tournament_state');
       
       onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -720,7 +724,7 @@ button, select, input {
       localStorage.setItem('maarif_cup_premier_v3', JSON.stringify(appState));
       if (db && isFirebaseReady && auth.currentUser) {
         try {
-          const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tournament_state');
+          const docRef = doc(db, 'artifacts', appId, 'public_data', 'tournament_state');
           await setDoc(docRef, { payload: JSON.stringify({
             classes: appState.classes,
             players: appState.players,
@@ -1448,6 +1452,26 @@ button, select, input {
           updateAdminStats();
           showToast('Tournament data reset', 'info');
         }
+      });
+
+      // Export HTML feature
+      document.getElementById('btnExportHtml')?.addEventListener('click', () => {
+        let currentHtml = document.documentElement.outerHTML;
+        // Inject current appState as default initial state inside script
+        const stateJson = JSON.stringify({
+          theme: appState.theme,
+          isAdmin: false,
+          classes: appState.classes,
+          players: appState.players,
+          weeks: appState.weeks
+        });
+        
+        const blob = new Blob(["<!DOCTYPE html>\n<html lang=\"en\" class=\"dark\">\n" + document.head.outerHTML + "\n" + document.body.outerHTML + "\n</html>"], { type: "text/html" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "index.html";
+        a.click();
+        showToast('Downloaded updated index.html!', 'success');
       });
 
       // Theme toggle
