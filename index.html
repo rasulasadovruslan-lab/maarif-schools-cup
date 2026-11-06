@@ -375,6 +375,10 @@ button, select, input {
             <div class="glass-panel p-5 rounded-2xl space-y-3.5 border">
               <h3 class="font-bold text-sm sm:text-base flex items-center gap-2 text-maarifAccent"><i class="fa-solid fa-bolt"></i> Actions</h3>
               <div class="space-y-2.5">
+                <button id="btnAdminSaveCloud" class="w-full py-2.5 px-3.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-xs font-bold transition text-left flex items-center justify-between text-emerald-400 border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+                  <span>Save All Changes to Cloud</span>
+                  <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+                </button>
                 <button id="btnAdminAddClass" class="w-full py-2.5 px-3.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-xs font-semibold transition text-left flex items-center justify-between border border-gray-200 dark:border-white/10">
                   <span>Add Class Team</span>
                   <i class="fa-solid fa-plus text-maarifAccent"></i>
@@ -679,10 +683,10 @@ button, select, input {
 
         if (token) {
           signInWithCustomToken(auth, token).then(startSync).catch(() => {
-            signInAnonymously(auth).then(startSync);
+            signInAnonymously(auth).then(startSync).catch(err => console.warn("Auth error, using local state:", err));
           });
         } else {
-          signInAnonymously(auth).then(startSync);
+          signInAnonymously(auth).then(startSync).catch(err => console.warn("Auth error, using local state:", err));
         }
       } catch (e) {
         console.warn('Firebase init error, fallback to local storage:', e);
@@ -691,7 +695,8 @@ button, select, input {
 
     function setupFirestoreListener() {
       if (!db || !auth.currentUser) return;
-      const docRef = doc(db, 'artifacts', appId, 'public_data', 'tournament_state');
+      // Using open-access document path
+      const docRef = doc(db, 'artifacts', appId, 'public', 'data');
       
       onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
@@ -716,7 +721,7 @@ button, select, input {
           saveState(); // Initialize remote doc if missing
         }
       }, (error) => {
-        console.error('Firestore listener error:', error);
+        console.warn('Firestore listener fallback to LocalStorage:', error.message);
       });
     }
 
@@ -724,14 +729,14 @@ button, select, input {
       localStorage.setItem('maarif_cup_premier_v3', JSON.stringify(appState));
       if (db && isFirebaseReady && auth.currentUser) {
         try {
-          const docRef = doc(db, 'artifacts', appId, 'public_data', 'tournament_state');
+          const docRef = doc(db, 'artifacts', appId, 'public', 'data');
           await setDoc(docRef, { payload: JSON.stringify({
             classes: appState.classes,
             players: appState.players,
             weeks: appState.weeks
           }) });
         } catch (err) {
-          console.error("Cloud save error:", err);
+          console.warn("Cloud save error, fallback to local:", err.message);
         }
       }
     }
@@ -1430,6 +1435,12 @@ button, select, input {
           updateAdminStats();
           showToast('Fixtures cleared', 'info');
         }
+      });
+
+      // Manual Save to Cloud Button in Admin Panel
+      document.getElementById('btnAdminSaveCloud')?.addEventListener('click', async () => {
+        await saveState();
+        showToast('All changes saved to cloud!', 'success');
       });
 
       // Reset All Data
