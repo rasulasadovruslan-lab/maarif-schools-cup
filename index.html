@@ -1224,6 +1224,29 @@
       </div>
     </div>
 
+    <!-- FIREBASE ANALYTICS (separate from app.js; failures here never break the site) -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKElrY",
+        authDomain: "maarif-football-project.firebaseapp.com",
+        projectId: "maarif-football-project",
+        storageBucket: "maarif-football-project.firebasestorage.app",
+        messagingSenderId: "673595498743",
+        appId: "1:673595498743:web:8b457ed7ce903c0ec273f2",
+        measurementId: "G-D7P3E3R0Y3",
+      };
+
+      try {
+        const analyticsApp = initializeApp(firebaseConfig, "analytics");
+        getAnalytics(analyticsApp);
+      } catch (e) {
+        console.warn("Analytics unavailable:", e);
+      }
+    </script>
+
     <!-- FIREBASE & APP SCRIPT -->
     <script type="module" src="app.js"></script>
   </body>

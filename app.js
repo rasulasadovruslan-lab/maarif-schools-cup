@@ -105,13 +105,13 @@ let appState = {
 };
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKELrY",
+  apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKElrY",
   authDomain: "maarif-football-project.firebaseapp.com",
   projectId: "maarif-football-project",
   storageBucket: "maarif-football-project.firebasestorage.app",
   messagingSenderId: "673595498743",
-  appId: "1:673595498743:web:347b8ddf759b3531c273f2",
-  measurementId: "G-6YF0SENEZY",
+  appId: "1:673595498743:web:8b457ed7ce903c0ec273f2",
+  measurementId: "G-D7P3E3R0Y3",
 };
 
 let db = null;
