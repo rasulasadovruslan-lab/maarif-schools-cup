@@ -630,22 +630,21 @@
                 Admin Privileges Required
               </h3>
               <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Sign in with your Firebase administrator account.
+                Sign in with Sarxan Hoca's admin credentials.
               </p>
             </div>
             <form id="formInlineLogin" class="space-y-3.5 text-left">
               <div>
                 <label
                   class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1"
-                  >Admin Email</label
+                  >Admin Username</label
                 >
                 <input
-                  type="email"
+                  type="text"
                   id="inlineLoginUsername"
-                  autocomplete="username"
                   required
                   class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-xs sm:text-sm focus:outline-none focus:border-maarifAccent"
-                  placeholder="your Firebase account email"
+                  placeholder="Admin_Sarxan"
                 />
               </div>
               <div>
@@ -656,7 +655,6 @@
                 <input
                   type="password"
                   id="inlineLoginPassword"
-                  autocomplete="current-password"
                   required
                   class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-xs sm:text-sm focus:outline-none focus:border-maarifAccent"
                   placeholder="••••••••"
@@ -667,13 +665,6 @@
                 class="w-full py-3 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-xs sm:text-sm tracking-wide transition shadow-lg shadow-maarifAccent/20"
               >
                 Sign In as Admin
-              </button>
-              <button
-                type="button"
-                id="btnInlinePasswordReset"
-                class="w-full text-xs font-semibold text-maarifAccent hover:underline"
-              >
-                Forgot password? Send reset email
               </button>
             </form>
           </div>
@@ -823,22 +814,21 @@
           </div>
           <h3 class="text-base sm:text-lg font-bold">Admin Authentication</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            Firebase administrator account required.
+            Sarxan Hoca credentials required.
           </p>
         </div>
         <form id="formModalLogin" class="space-y-3.5">
           <div>
             <label
               class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1"
-              >Admin Email</label
+              >Username</label
             >
             <input
-              type="email"
+              type="text"
               id="modalLoginUsername"
-              autocomplete="username"
               required
               class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-xs sm:text-sm focus:outline-none focus:border-maarifAccent"
-              placeholder="your Firebase account email"
+              placeholder="Admin_Sarxan"
             />
           </div>
           <div>
@@ -849,7 +839,6 @@
             <input
               type="password"
               id="modalLoginPassword"
-              autocomplete="current-password"
               required
               class="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-black/40 border border-gray-300 dark:border-white/10 text-xs sm:text-sm focus:outline-none focus:border-maarifAccent"
               placeholder="••••••••"
@@ -860,13 +849,6 @@
             class="w-full py-3 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-xs sm:text-sm tracking-wide transition shadow-lg shadow-maarifAccent/20"
           >
             Sign In
-          </button>
-          <button
-            type="button"
-            id="btnModalPasswordReset"
-            class="w-full text-xs font-semibold text-maarifAccent hover:underline"
-          >
-            Forgot password? Send reset email
           </button>
         </form>
       </div>
@@ -1223,29 +1205,6 @@
         </form>
       </div>
     </div>
-
-    <!-- FIREBASE ANALYTICS (separate from app.js; failures here never break the site) -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-app.js";
-      import { getAnalytics } from "https://www.gstatic.com/firebasejs/13.2.0/firebase-analytics.js";
-
-      const firebaseConfig = {
-        apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKElrY",
-        authDomain: "maarif-football-project.firebaseapp.com",
-        projectId: "maarif-football-project",
-        storageBucket: "maarif-football-project.firebasestorage.app",
-        messagingSenderId: "673595498743",
-        appId: "1:673595498743:web:8b457ed7ce903c0ec273f2",
-        measurementId: "G-D7P3E3R0Y3",
-      };
-
-      try {
-        const analyticsApp = initializeApp(firebaseConfig, "analytics");
-        getAnalytics(analyticsApp);
-      } catch (e) {
-        console.warn("Analytics unavailable:", e);
-      }
-    </script>
 
     <!-- FIREBASE & APP SCRIPT -->
     <script type="module" src="app.js"></script>
