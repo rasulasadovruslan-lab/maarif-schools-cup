@@ -3,8 +3,10 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import {
   getAuth,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signOut,
   onAuthStateChanged,
+  getIdTokenResult,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
   getFirestore,
@@ -13,8 +15,9 @@ import {
   onSnapshot,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-// Designated Admin Email Configuration
-const ADMIN_EMAIL = "admin@maarif.com"; // Change to your exact registered Firebase email if different
+// Admin access is granted only by a Firebase custom claim set with the
+// Firebase Admin SDK in a trusted environment. No admin email is configured here.
+let authCheckGeneration = 0;
 
 const N = "http://www.w3.org/2000/svg",
   cx = 250,
@@ -120,18 +123,41 @@ try {
   auth = getAuth(app);
   isFirebaseReady = true;
 
-  // Robust persistent Auth State Observer
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // Verify email or fallback to admin flag
-      appState.isAdmin = true;
-      sessionStorage.setItem("maarif_admin_active", "true");
-    } else {
+  // The server-issued custom claim is the only source of admin authorization.
+  // Force-refresh on auth changes so newly granted/revoked claims take effect.
+  onAuthStateChanged(
+    auth,
+    async (user) => {
+      const checkId = ++authCheckGeneration;
       appState.isAdmin = false;
-      sessionStorage.removeItem("maarif_admin_active");
-    }
-    updateAuthUI();
-  });
+      updateAuthUI();
+      if (!user) return;
+
+      try {
+        const token = await getIdTokenResult(user, true);
+        if (checkId !== authCheckGeneration) return;
+        appState.isAdmin = token.claims.admin === true;
+        updateAuthUI();
+        if (!appState.isAdmin) {
+          console.info("Signed-in Firebase user does not have the admin custom claim.");
+          showToast("This account does not have administrator permissions.", "error");
+        }
+      } catch (error) {
+        if (checkId !== authCheckGeneration) return;
+        console.error("Could not verify Firebase admin claim:", error);
+        appState.isAdmin = false;
+        updateAuthUI();
+        showToast("Could not verify admin permissions. Please sign in again.", "error");
+      }
+    },
+    (error) => {
+      ++authCheckGeneration;
+      console.error("Firebase Auth state error:", error);
+      appState.isAdmin = false;
+      updateAuthUI();
+      showToast("Could not verify your login session. Please refresh.", "error");
+    },
+  );
 
   setupFirestoreListener();
 } catch (e) {
@@ -177,24 +203,52 @@ function setupFirestoreListener() {
 }
 
 async function saveState() {
-  localStorage.setItem("maarif_cup_premier_v3", JSON.stringify(appState));
-  if (db && isFirebaseReady) {
-    try {
-      const docRef = doc(db, "maarif_tournaments", "global_baku_2026");
-      await setDoc(
-        docRef,
-        {
-          classes: appState.classes,
-          players: appState.players,
-          weeks: appState.weeks,
-          adminActive: appState.isAdmin,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true },
-      );
-    } catch (err) {
-      console.warn("Cloud save error, fallback to local:", err.message);
+  // Local cache is for display/offline convenience, never for authorization.
+  localStorage.setItem(
+    "maarif_cup_premier_v3",
+    JSON.stringify({
+      theme: appState.theme,
+      classes: appState.classes,
+      players: appState.players,
+      weeks: appState.weeks,
+    }),
+  );
+
+  if (!db || !isFirebaseReady) {
+    console.warn("Firebase is unavailable; changes were saved only in this browser.");
+    return false;
+  }
+
+  if (!auth?.currentUser) {
+    console.warn("Cloud write blocked: no Firebase user is signed in.");
+    return false;
+  }
+
+  try {
+    // Re-check the server-issued claim before attempting a privileged write.
+    const token = await getIdTokenResult(auth.currentUser, true);
+    if (token.claims.admin !== true) {
+      appState.isAdmin = false;
+      updateAuthUI();
+      console.warn("Cloud write blocked: Firebase admin claim is missing.");
+      return false;
     }
+    const docRef = doc(db, "maarif_tournaments", "global_baku_2026");
+    await setDoc(
+      docRef,
+      {
+        classes: appState.classes,
+        players: appState.players,
+        weeks: appState.weeks,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+    return true;
+  } catch (err) {
+    console.error("Cloud save failed:", err);
+    showToast(`Cloud save failed: ${firebaseErrorMessage(err)}`, "error");
+    return false;
   }
 }
 
@@ -210,9 +264,9 @@ function loadState() {
       console.warn("Failed to parse local storage:", e);
     }
   }
-  if (sessionStorage.getItem("maarif_admin_active") === "true") {
-    appState.isAdmin = true;
-  }
+  // Deliberately do not restore isAdmin from localStorage/sessionStorage.
+  // Do not reset it here either: Firebase's auth observer may already have
+  // completed before the user enters the portal.
 }
 
 function showToast(msg, type = "info") {
@@ -634,45 +688,104 @@ function updateAuthUI() {
   renderClasses();
 }
 
+function firebaseErrorMessage(error) {
+  const code = error?.code || "";
+  const messages = {
+    "auth/invalid-email": "Please enter a valid email address.",
+    "auth/user-not-found": "No Firebase account exists for this email.",
+    "auth/wrong-password": "The password is incorrect.",
+    "auth/invalid-credential": "Firebase rejected this sign-in. Check that this email is registered under Authentication → Users in this project, then use Forgot password if needed.",
+    "auth/too-many-requests": "Too many attempts. Wait a while and try again.",
+    "auth/network-request-failed": "Network error. Check your internet connection.",
+    "auth/operation-not-allowed": "Email/password sign-in is disabled in Firebase Authentication.",
+    "auth/user-disabled": "This Firebase account has been disabled.",
+    "permission-denied": "Firestore denied the write. Check your Firestore Security Rules.",
+  };
+  return messages[code] || error?.message || "An unexpected Firebase error occurred.";
+}
+
 async function loginAdmin(email, pass) {
-  if (!auth) {
-    showToast("Firebase Auth not initialized!", "error");
+  if (!auth || !isFirebaseReady) {
+    showToast("Firebase could not initialize. Check the Firebase configuration.", "error");
     return false;
   }
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      (email || "").trim(),
-      (pass || "").trim(),
-    );
 
-    // Explicitly grant admin privileges upon successful authentication
+  // Match the original login behavior: strip accidental leading/trailing
+  // whitespace from both fields, and normalize email casing. Passwords with
+  // intentional outer spaces were not accepted by the original site either.
+  const enteredEmail = String(email || "").trim().toLowerCase();
+  const enteredPassword = String(pass || "").trim();
+  if (!enteredEmail || !enteredPassword) {
+    showToast("Enter your Firebase account email and password.", "error");
+    return false;
+  }
+
+  try {
+    const credential = await signInWithEmailAndPassword(
+      auth,
+      enteredEmail,
+      enteredPassword,
+    );
+    // Refresh the ID token so the latest server-side custom claims are checked.
+    const token = await getIdTokenResult(credential.user, true);
+    if (token.claims.admin !== true) {
+      await signOut(auth);
+      appState.isAdmin = false;
+      updateAuthUI();
+      showToast("Login succeeded, but this account has no admin permission.", "error");
+      return false;
+    }
+
     appState.isAdmin = true;
-    sessionStorage.setItem("maarif_admin_active", "true");
-    saveState();
     updateAuthUI();
-    showToast("Logged in successfully as Admin!", "success");
+    showToast("Admin login successful.", "success");
     return true;
-  } catch (err) {
-    console.error("Firebase Login Error:", err);
-    showToast("Invalid email or password!", "error");
+  } catch (error) {
+    console.error("Firebase admin login failed:", error);
+    showToast(firebaseErrorMessage(error), "error");
     return false;
   }
 }
 
-async function logoutAdmin() {
-  if (auth) {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn("Sign out error:", e);
-    }
+async function sendAdminPasswordReset(email) {
+  if (!auth || !isFirebaseReady) {
+    showToast("Firebase could not initialize. Please refresh and try again.", "error");
+    return;
   }
-  appState.isAdmin = false;
-  sessionStorage.removeItem("maarif_admin_active");
-  saveState();
-  updateAuthUI();
-  showToast("Logged out successfully");
+
+  const enteredEmail = String(email || "").trim().toLowerCase();
+  if (!enteredEmail) {
+    showToast("Enter your Firebase account email first.", "error");
+    return;
+  }
+
+  try {
+    await sendPasswordResetEmail(auth, enteredEmail);
+    showToast("Password reset email sent. Check your inbox and spam folder.", "success");
+  } catch (error) {
+    console.error("Firebase password reset failed:", error);
+    const code = error?.code || "";
+    const message = code === "auth/user-not-found"
+      ? "No Firebase Authentication account was found for that email in this project."
+      : code === "auth/invalid-email"
+        ? "Please enter a valid email address."
+        : code === "auth/too-many-requests"
+          ? "Too many requests. Please try again later."
+          : firebaseErrorMessage(error);
+    showToast(message, "error");
+  }
+}
+
+async function logoutAdmin() {
+  try {
+    if (auth?.currentUser) await signOut(auth);
+    appState.isAdmin = false;
+    updateAuthUI();
+    showToast("Logged out successfully.", "success");
+  } catch (error) {
+    console.error("Firebase sign-out failed:", error);
+    showToast(firebaseErrorMessage(error), "error");
+  }
 }
 
 window.openAddMatchModal = function (weekId) {
@@ -886,6 +999,18 @@ function initApp() {
       await loginAdmin(u, p);
     });
 
+  document.getElementById("btnModalPasswordReset")?.addEventListener("click", () => {
+    sendAdminPasswordReset(
+      document.getElementById("modalLoginUsername")?.value,
+    );
+  });
+
+  document.getElementById("btnInlinePasswordReset")?.addEventListener("click", () => {
+    sendAdminPasswordReset(
+      document.getElementById("inlineLoginUsername")?.value,
+    );
+  });
+
   document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
     logoutAdmin();
   });
@@ -1053,8 +1178,9 @@ function initApp() {
   document
     .getElementById("btnAdminSaveCloud")
     ?.addEventListener("click", async () => {
-      await saveState();
-      showToast("All changes saved to cloud!", "success");
+      const saved = await saveState();
+      if (saved) showToast("All changes saved to cloud.", "success");
+      else if (!appState.isAdmin) showToast("Sign in with an account that has the Firebase admin permission to save to the cloud.", "error");
     });
 
   document.getElementById("btnAdminResetAll")?.addEventListener("click", () => {

@@ -7,7 +7,7 @@ import { applicationDefault, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
 const uid = process.env.ADMIN_UID?.trim();
-const action = (process.env.ADMIN_ACTION || 'grant').trim().toLowerCase();
+const action = (process.argv[2] || process.env.ADMIN_ACTION || 'grant').trim().toLowerCase();
 const projectId = process.env.GCLOUD_PROJECT || process.env.GOOGLE_CLOUD_PROJECT;
 
 if (!uid) {

@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "grant-admin": "node set-admin-claim.mjs",
-    "revoke-admin": "node set-admin-claim.mjs"
+    "grant-admin": "node set-admin-claim.mjs grant",
+    "revoke-admin": "node set-admin-claim.mjs revoke"
   },
   "dependencies": {
     "firebase-admin": "^13.0.0"
