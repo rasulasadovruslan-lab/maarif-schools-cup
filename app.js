@@ -91,6 +91,7 @@ let appState = {
   ],
   players: [],
   weeks: [],
+  news: [],
 };
 
 const firebaseConfig = {
@@ -99,9 +100,14 @@ const firebaseConfig = {
   projectId: "maarif-football-project",
   storageBucket: "maarif-football-project.firebasestorage.app",
   messagingSenderId: "673595498743",
-  appId: "1:673595498743:web:347b8ddf759b3531c273f2",
-  measurementId: "G-6YF0SENEZY",
+  appId: "1:673595498743:web:8b457ed7ce903c0ec273f2",
+  measurementId: "G-D7P3E3R0Y3",
 };
+
+// IMPORTANT: your tournament data lives at artifacts/<this id>/public_data/...
+// It is the ORIGINAL web-app id, kept fixed on purpose. Do NOT change it when you
+// re-create the Firebase web app, or the site will look empty (the data is still safe).
+const DATA_APP_ID = "1:673595498743:web:347b8ddf759b3531c273f2";
 
 let db = null;
 let auth = null;
@@ -136,7 +142,7 @@ function setupFirestoreListener() {
   const docRef = doc(
     db,
     "artifacts",
-    firebaseConfig.appId,
+    DATA_APP_ID,
     "public_data",
     "tournament_state",
   );
@@ -151,6 +157,7 @@ function setupFirestoreListener() {
             appState.classes = remote.classes || appState.classes;
             appState.players = remote.players || [];
             appState.weeks = remote.weeks || [];
+            appState.news = remote.news || [];
             remoteLoaded = true;
             localStorage.setItem(
               "maarif_cup_premier_v3",
@@ -163,6 +170,8 @@ function setupFirestoreListener() {
             renderScorers();
             renderAssists();
             updateAdminStats();
+            renderNews();
+            renderInjuryReport();
           } catch (err) {
             console.error("Cloud parse error:", err);
           }
@@ -191,7 +200,7 @@ async function saveState() {
       const docRef = doc(
         db,
         "artifacts",
-        firebaseConfig.appId,
+        DATA_APP_ID,
         "public_data",
         "tournament_state",
       );
@@ -201,6 +210,7 @@ async function saveState() {
           classes: appState.classes,
           players: appState.players,
           weeks: appState.weeks,
+          news: appState.news || [],
           updatedAt: new Date().toISOString(),
         },
         { merge: true },
@@ -227,6 +237,7 @@ function loadState() {
       appState.classes = parsed.classes || appState.classes;
       appState.players = parsed.players || [];
       appState.weeks = parsed.weeks || [];
+      appState.news = parsed.news || [];
     } catch (e) {
       console.warn("Failed to parse local storage:", e);
     }
@@ -471,18 +482,22 @@ function renderClasses() {
           ? teamPlayers
               .map(
                 (p) => `
-      <div class="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-black/10 dark:bg-white/5 text-xs">
-        <div class="flex items-center gap-2">
-          <span class="w-5 h-5 rounded-full bg-maarifAccent/20 text-maarifAccent font-bold text-[10px] flex items-center justify-center">#${p.number || 10}</span>
-          <span class="font-medium">${p.name}</span>
+      <div class="flex items-center justify-between gap-2 py-1.5 px-2.5 rounded-lg text-xs ${p.injured ? "bg-red-500/10 border border-red-500/20" : "bg-black/10 dark:bg-white/5"}">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-5 h-5 shrink-0 rounded-full bg-maarifAccent/20 text-maarifAccent font-bold text-[10px] flex items-center justify-center">#${p.number || 10}</span>
+          <span class="font-medium truncate">${escapeHtml(p.name)}</span>
+          ${p.injured ? injuryBadge() : ""}
         </div>
-        <div class="flex items-center gap-2 text-[10px] text-gray-400">
+        <div class="flex items-center gap-2 text-[10px] text-gray-400 shrink-0">
           <span>⚽ ${p.goals || 0}</span>
           <span>🅰️ ${p.assists || 0}</span>
           ${
             appState.isAdmin
               ? `
-            <button onclick="window.deletePlayer('${p.id}')" class="text-red-400 hover:text-red-500 ml-1">
+            <button type="button" onclick="window.toggleInjury('${p.id}')" title="${p.injured ? "Mark as fit" : "Mark as injured"}" aria-label="${p.injured ? "Mark as fit" : "Mark as injured"}" aria-pressed="${p.injured ? "true" : "false"}" class="w-7 h-7 rounded-md flex items-center justify-center transition ${p.injured ? "bg-red-500 text-white" : "bg-gray-500/20 text-gray-400 hover:bg-red-500/20 hover:text-red-400"}">
+              <i class="fa-solid fa-bandage text-[11px]"></i>
+            </button>
+            <button onclick="window.deletePlayer('${p.id}')" class="text-red-400 hover:text-red-500 p-1">
               <i class="fa-solid fa-xmark"></i>
             </button>
           `
@@ -545,7 +560,7 @@ function renderScorers() {
       return `
       <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition text-xs">
         <td class="py-3 px-3 text-center font-bold ${idx === 0 ? "text-amber-400" : ""}">${idx + 1}</td>
-        <td class="py-3 px-3 font-semibold">${p.name} (#${p.number})</td>
+        <td class="py-3 px-3 font-semibold">${escapeHtml(p.name)} (#${p.number})${p.injured ? injuryIcon() : ""}</td>
         <td class="py-3 px-3 text-gray-400">${team ? team.name : "Unknown"}</td>
         <td class="py-3 px-3 text-center font-black text-maarifAccent text-sm">${p.goals || 0}</td>
         <td class="py-3 px-3 text-center text-gray-400">${p.assists || 0}</td>
@@ -576,7 +591,7 @@ function renderAssists() {
       return `
       <tr class="hover:bg-black/5 dark:hover:bg-white/5 transition text-xs">
         <td class="py-3 px-3 text-center font-bold ${idx === 0 ? "text-amber-400" : ""}">${idx + 1}</td>
-        <td class="py-3 px-3 font-semibold">${p.name} (#${p.number})</td>
+        <td class="py-3 px-3 font-semibold">${escapeHtml(p.name)} (#${p.number})${p.injured ? injuryIcon() : ""}</td>
         <td class="py-3 px-3 text-gray-400">${team ? team.name : "Unknown"}</td>
         <td class="py-3 px-3 text-center font-black text-maarifAccent text-sm">${p.assists || 0}</td>
         <td class="py-3 px-3 text-center text-gray-400">${p.goals || 0}</td>
@@ -597,8 +612,178 @@ function updateAdminStats() {
   }
 }
 
+
+// ===================== NEWS & INJURIES =====================
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[ch]);
+}
+
+function injuryBadge() {
+  return `<span class="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-red-500/15 text-red-400 border border-red-500/30 text-[9px] font-bold uppercase tracking-wide"><i class="fa-solid fa-bandage"></i>Injured</span>`;
+}
+
+function injuryIcon() {
+  return ` <i class="fa-solid fa-bandage text-red-400 text-[11px] ml-1" title="Injured"></i>`;
+}
+
+const NEWS_CATEGORIES = {
+  news: { label: "News", icon: "fa-newspaper", cls: "bg-maarifAccent/15 text-maarifAccent border-maarifAccent/30" },
+  match: { label: "Match Report", icon: "fa-futbol", cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
+  injury: { label: "Injury Update", icon: "fa-bandage", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+  announcement: { label: "Announcement", icon: "fa-bullhorn", cls: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
+};
+
+function formatNewsDate(iso) {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function renderNews() {
+  const container = document.getElementById("newsListContainer");
+  if (!container) return;
+  const list = Array.isArray(appState.news) ? appState.news : [];
+
+  if (list.length === 0) {
+    container.innerHTML = `<div class="p-8 text-center glass-panel rounded-2xl text-gray-400 text-xs sm:text-sm"><i class="fa-regular fa-newspaper text-2xl mb-2 block"></i>No news yet. ${appState.isAdmin ? 'Click "Post News" to publish the first update.' : "Check back soon!"}</div>`;
+    return;
+  }
+
+  const sorted = [...list].sort(
+    (a, b) =>
+      (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) ||
+      new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+  );
+
+  container.innerHTML = sorted
+    .map((n) => {
+      const cat = NEWS_CATEGORIES[n.category] || NEWS_CATEGORIES.news;
+      const id = escapeHtml(n.id);
+      return `
+      <article class="glass-panel p-4 sm:p-5 rounded-2xl border space-y-3 ${n.pinned ? "ring-1 ring-maarifAccent/40" : ""}">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase tracking-wide ${cat.cls}"><i class="fa-solid ${cat.icon}"></i>${cat.label}</span>
+          ${n.pinned ? `<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-maarifAccent"><i class="fa-solid fa-thumbtack"></i>Pinned</span>` : ""}
+          <span class="ml-auto text-[10px] text-gray-400">${formatNewsDate(n.createdAt)}</span>
+        </div>
+        <h3 class="font-bold text-base sm:text-lg leading-snug break-words">${escapeHtml(n.title)}</h3>
+        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 whitespace-pre-line break-words leading-relaxed">${escapeHtml(n.body)}</p>
+        ${
+          appState.isAdmin
+            ? `
+        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-200 dark:border-white/10">
+          <button type="button" onclick="window.toggleNewsPin('${id}')" class="px-3 py-1.5 rounded-lg bg-maarifAccent/10 text-maarifAccent hover:bg-maarifAccent/20 text-xs font-semibold transition"><i class="fa-solid fa-thumbtack mr-1"></i>${n.pinned ? "Unpin" : "Pin"}</button>
+          <button type="button" onclick="window.openNewsModal('${id}')" class="px-3 py-1.5 rounded-lg bg-gray-500/10 text-gray-500 dark:text-gray-300 hover:bg-gray-500/20 text-xs font-semibold transition"><i class="fa-solid fa-pen-to-square mr-1"></i>Edit</button>
+          <button type="button" onclick="window.deleteNews('${id}')" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 text-xs font-semibold transition"><i class="fa-solid fa-trash mr-1"></i>Delete</button>
+        </div>`
+            : ""
+        }
+      </article>`;
+    })
+    .join("");
+}
+
+function renderInjuryReport() {
+  const list = document.getElementById("injuryReportList");
+  const count = document.getElementById("injuryCount");
+  const injured = appState.players.filter((p) => p.injured);
+  if (count) count.textContent = injured.length;
+  if (!list) return;
+
+  if (injured.length === 0) {
+    list.innerHTML = `<p class="text-xs text-gray-400 italic py-2">No injuries reported. Everyone is fit! 💪</p>`;
+    return;
+  }
+
+  const teamName = (p) => appState.classes.find((c) => c.id === p.teamId)?.name || "";
+  list.innerHTML = [...injured]
+    .sort((a, b) => teamName(a).localeCompare(teamName(b)) || String(a.name).localeCompare(String(b.name)))
+    .map((p) => {
+      const team = appState.classes.find((c) => c.id === p.teamId);
+      return `
+      <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-xs">
+        <div class="min-w-0">
+          <div class="font-semibold truncate">${escapeHtml(p.name)} <span class="text-gray-400 font-normal">#${p.number || 10}</span></div>
+          <div class="flex items-center gap-1.5 text-[10px] text-gray-400 mt-0.5">
+            <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${escapeHtml(team ? team.color : "#888")}"></span>
+            <span class="truncate">${escapeHtml(team ? team.name : "Unknown")}</span>
+          </div>
+        </div>
+        ${
+          appState.isAdmin
+            ? `<button type="button" onclick="window.toggleInjury('${p.id}')" class="shrink-0 px-2.5 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/25 text-[11px] font-bold transition">Mark fit</button>`
+            : ""
+        }
+      </div>`;
+    })
+    .join("");
+}
+
+window.toggleInjury = function (playerId) {
+  if (!appState.isAdmin) return;
+  const p = appState.players.find((x) => x.id === playerId);
+  if (!p) return;
+  p.injured = !p.injured;
+  saveState();
+  renderClasses();
+  renderScorers();
+  renderAssists();
+  renderInjuryReport();
+  showToast(`${p.name} marked as ${p.injured ? "injured" : "fit"}`, "info");
+  // keep the match-score popup in sync if it is open
+  const modal = document.getElementById("editMatchModal");
+  if (modal && !modal.classList.contains("hidden")) {
+    const weekId = document.getElementById("editMatchWeekId").value;
+    const matchId = document.getElementById("editMatchId").value;
+    if (weekId && matchId) window.openEditMatchModal(weekId, matchId);
+  }
+};
+
+window.openNewsModal = function (newsId) {
+  if (!appState.isAdmin) return;
+  const item = newsId ? (appState.news || []).find((n) => n.id === newsId) : null;
+  document.getElementById("newsIdInput").value = item ? item.id : "";
+  document.getElementById("newsTitleInput").value = item ? item.title : "";
+  document.getElementById("newsCategoryInput").value = item ? item.category || "news" : "news";
+  document.getElementById("newsBodyInput").value = item ? item.body : "";
+  document.getElementById("newsPinInput").checked = item ? !!item.pinned : false;
+  document.getElementById("newsModalTitle").textContent = item ? "Edit News" : "Post News";
+  document.getElementById("newsModal").classList.remove("hidden");
+  document.getElementById("newsModal").classList.add("flex");
+};
+
+window.deleteNews = function (newsId) {
+  if (!appState.isAdmin) return;
+  if (!confirm("Delete this news post?")) return;
+  appState.news = (appState.news || []).filter((n) => n.id !== newsId);
+  saveState();
+  renderNews();
+  showToast("News deleted", "info");
+};
+
+window.toggleNewsPin = function (newsId) {
+  if (!appState.isAdmin) return;
+  const item = (appState.news || []).find((n) => n.id === newsId);
+  if (!item) return;
+  item.pinned = !item.pinned;
+  saveState();
+  renderNews();
+};
+
 function switchTab(tabId) {
-  ["league", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
+  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
     (t) => {
       const tabEl = document.getElementById(`tab-${t}`);
       const btnEl = document.getElementById(`tabBtn-${t}`);
@@ -651,8 +836,14 @@ function updateAuthUI() {
     if (classAdminControls) classAdminControls.classList.add("hidden");
   }
 
+  document
+    .getElementById("newsAdminControls")
+    ?.classList.toggle("hidden", !appState.isAdmin);
+
   renderFixtures();
   renderClasses();
+  renderNews();
+  renderInjuryReport();
 }
 
 function loginAdmin(user, pass) {
@@ -737,8 +928,13 @@ window.openEditMatchModal = function (weekId, matchId) {
     assignList.innerHTML = teamPlayers
       .map(
         (p) => `
-      <div class="flex items-center justify-between p-2 rounded-xl bg-black/10 dark:bg-white/5 text-xs">
-        <span class="font-semibold truncate max-w-[120px]">${p.name}</span>
+      <div class="flex flex-wrap items-center justify-between gap-2 p-2 rounded-xl text-xs ${p.injured ? "bg-red-500/10 border border-red-500/20" : "bg-black/10 dark:bg-white/5"}">
+        <div class="flex items-center gap-2 min-w-0">
+          <button type="button" onclick="window.toggleInjury('${p.id}')" title="${p.injured ? "Mark as fit" : "Mark as injured"}" aria-label="${p.injured ? "Mark as fit" : "Mark as injured"}" aria-pressed="${p.injured ? "true" : "false"}" class="w-7 h-7 shrink-0 rounded-md flex items-center justify-center transition ${p.injured ? "bg-red-500 text-white" : "bg-gray-500/20 text-gray-400 hover:bg-red-500/20 hover:text-red-400"}">
+            <i class="fa-solid fa-bandage text-[11px]"></i>
+          </button>
+          <span class="font-semibold truncate max-w-[140px]">${escapeHtml(p.name)}</span>
+        </div>
         <div class="flex items-center gap-3">
           <div class="flex items-center gap-1">
             <span class="text-[10px] text-gray-400">G:</span>
@@ -834,7 +1030,7 @@ function initApp() {
   renderAssists();
   updateAdminStats();
 
-  ["league", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
+  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
     (t) => {
       document
         .getElementById(`tabBtn-${t}`)
@@ -1085,6 +1281,46 @@ function initApp() {
     a.download = "index.html";
     a.click();
     showToast("Downloaded updated index.html!", "success");
+  });
+
+  document.getElementById("btnOpenNewsModal")?.addEventListener("click", () => {
+    window.openNewsModal();
+  });
+  document.getElementById("btnCloseNewsModal")?.addEventListener("click", () => {
+    document.getElementById("newsModal").classList.add("hidden");
+    document.getElementById("newsModal").classList.remove("flex");
+  });
+  document.getElementById("formNews")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!appState.isAdmin) return;
+    const id = document.getElementById("newsIdInput").value;
+    const title = document.getElementById("newsTitleInput").value.trim();
+    const body = document.getElementById("newsBodyInput").value.trim();
+    const category = document.getElementById("newsCategoryInput").value;
+    const pinned = document.getElementById("newsPinInput").checked;
+    if (!title || !body) {
+      showToast("Please add a title and some text.", "error");
+      return;
+    }
+    appState.news = Array.isArray(appState.news) ? appState.news : [];
+    if (id) {
+      const item = appState.news.find((n) => n.id === id);
+      if (item) Object.assign(item, { title, body, category, pinned });
+    } else {
+      appState.news.push({
+        id: "n_" + Date.now(),
+        title,
+        body,
+        category,
+        pinned,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    saveState();
+    renderNews();
+    document.getElementById("newsModal").classList.add("hidden");
+    document.getElementById("newsModal").classList.remove("flex");
+    showToast(id ? "News updated" : "News posted", "success");
   });
 
   const toggleTheme = () => {
