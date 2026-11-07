@@ -18,6 +18,7 @@ import {
 // Admin access is granted only by a Firebase custom claim set with the
 // Firebase Admin SDK in a trusted environment. No admin email is configured here.
 let authCheckGeneration = 0;
+let loginInProgress = false;
 
 const N = "http://www.w3.org/2000/svg",
   cx = 250,
@@ -138,7 +139,7 @@ try {
         if (checkId !== authCheckGeneration) return;
         appState.isAdmin = token.claims.admin === true;
         updateAuthUI();
-        if (!appState.isAdmin) {
+        if (!appState.isAdmin && !loginInProgress) {
           console.info("Signed-in Firebase user does not have the admin custom claim.");
           showToast("This account does not have administrator permissions.", "error");
         }
@@ -269,7 +270,7 @@ function loadState() {
   // completed before the user enters the portal.
 }
 
-function showToast(msg, type = "info") {
+function showToast(msg, type = "info", duration = type === "error" ? 9000 : 3000) {
   const container = document.getElementById("toastContainer");
   if (!container) return;
   const toast = document.createElement("div");
@@ -280,7 +281,11 @@ function showToast(msg, type = "info") {
         ? "bg-emerald-500"
         : "bg-maarifAccent text-maarifBg"
   }`;
-  toast.innerHTML = `<i class="fa-solid ${type === "error" ? "fa-circle-exclamation" : type === "success" ? "fa-circle-check" : "fa-circle-info"}"></i><span>${msg}</span>`;
+  const icon = document.createElement("i");
+  icon.className = `fa-solid ${type === "error" ? "fa-circle-exclamation" : type === "success" ? "fa-circle-check" : "fa-circle-info"}`;
+  const span = document.createElement("span");
+  span.textContent = msg;
+  toast.append(icon, span);
   container.appendChild(toast);
   requestAnimationFrame(() => {
     toast.classList.remove("translate-y-2", "opacity-0");
@@ -288,7 +293,7 @@ function showToast(msg, type = "info") {
   setTimeout(() => {
     toast.classList.add("opacity-0", "translate-y-2");
     setTimeout(() => toast.remove(), 300);
-  }, 3000);
+  }, duration);
 }
 
 function calculateStandings() {
@@ -694,14 +699,21 @@ function firebaseErrorMessage(error) {
     "auth/invalid-email": "Please enter a valid email address.",
     "auth/user-not-found": "No Firebase account exists for this email.",
     "auth/wrong-password": "The password is incorrect.",
-    "auth/invalid-credential": "Firebase rejected this sign-in. Check that this email is registered under Authentication → Users in this project, then use Forgot password if needed.",
+    "auth/invalid-credential": "Wrong email or password, or this user does not exist in Firebase Authentication → Users for this project.",
     "auth/too-many-requests": "Too many attempts. Wait a while and try again.",
     "auth/network-request-failed": "Network error. Check your internet connection.",
-    "auth/operation-not-allowed": "Email/password sign-in is disabled in Firebase Authentication.",
+    "auth/operation-not-allowed": "Email/password sign-in is disabled. Enable it in Firebase Console → Authentication → Sign-in method.",
     "auth/user-disabled": "This Firebase account has been disabled.",
-    "permission-denied": "Firestore denied the write. Check your Firestore Security Rules.",
+    "auth/unauthorized-domain": "This website's domain is not authorized. Add it in Firebase Console → Authentication → Settings → Authorized domains.",
+    "auth/invalid-api-key": "The Firebase API key in app.js is invalid.",
+    "auth/api-key-not-valid.-please-pass-a-valid-api-key.": "The Firebase API key in app.js is invalid.",
+    "auth/app-not-authorized": "This app/domain is blocked by the API key restrictions in Google Cloud Console.",
+    "auth/configuration-not-found": "Authentication is not set up for this Firebase project. Click 'Get started' under Firebase Console → Authentication.",
+    "auth/user-token-expired": "Your session was revoked. Please sign in again.",
+    "permission-denied": "Firestore denied the write. Deploy firestore.rules and make sure your account has the admin claim.",
   };
-  return messages[code] || error?.message || "An unexpected Firebase error occurred.";
+  const base = messages[code] || error?.message || "An unexpected Firebase error occurred.";
+  return code ? `${base} [${code}]` : base;
 }
 
 async function loginAdmin(email, pass) {
@@ -710,16 +722,22 @@ async function loginAdmin(email, pass) {
     return false;
   }
 
-  // Match the original login behavior: strip accidental leading/trailing
-  // whitespace from both fields, and normalize email casing. Passwords with
-  // intentional outer spaces were not accepted by the original site either.
+  // Firebase Auth does not work from file:// - it must be http(s) (localhost is fine).
+  if (location.protocol === "file:") {
+    showToast("Open the site through a web server (e.g. http://localhost or your hosted URL), not by double-clicking the file.", "error");
+    return false;
+  }
+
+  // Emails are case-insensitive, so normalize. NEVER trim/alter the password:
+  // changing it would make a correct password fail.
   const enteredEmail = String(email || "").trim().toLowerCase();
-  const enteredPassword = String(pass || "").trim();
+  const enteredPassword = String(pass || "");
   if (!enteredEmail || !enteredPassword) {
     showToast("Enter your Firebase account email and password.", "error");
     return false;
   }
 
+  loginInProgress = true;
   try {
     const credential = await signInWithEmailAndPassword(
       auth,
@@ -729,10 +747,16 @@ async function loginAdmin(email, pass) {
     // Refresh the ID token so the latest server-side custom claims are checked.
     const token = await getIdTokenResult(credential.user, true);
     if (token.claims.admin !== true) {
+      const uid = credential.user.uid;
+      console.warn(`Signed in OK, but no admin claim. UID: ${uid}`);
       await signOut(auth);
       appState.isAdmin = false;
       updateAuthUI();
-      showToast("Login succeeded, but this account has no admin permission.", "error");
+      showToast(
+        `Password is correct, but this account has no admin claim yet. Grant it with: ADMIN_UID=${uid} npm run grant-admin`,
+        "error",
+        15000,
+      );
       return false;
     }
 
@@ -744,6 +768,8 @@ async function loginAdmin(email, pass) {
     console.error("Firebase admin login failed:", error);
     showToast(firebaseErrorMessage(error), "error");
     return false;
+  } finally {
+    loginInProgress = false;
   }
 }
 
