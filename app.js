@@ -1,6 +1,6 @@
 // Maarif Schools Cup - app logic + Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const N = 'http://www.w3.org/2000/svg', cx = 250, cy = 230;
@@ -481,20 +481,32 @@ function updateAuthUI() {
   renderClasses();
 }
 
-function loginAdmin(user, pass) {
-  if (user === 'Admin_Sarxan' && pass === '097Sarxan.hoca/87') {
+async function loginAdmin(email, pass) {
+  if (!auth) {
+    showToast('Firebase Auth not initialized!', 'error');
+    return false;
+  }
+  try {
+    await signInWithEmailAndPassword(auth, email, pass);
     appState.isAdmin = true;
     sessionStorage.setItem('maarif_admin_active', 'true');
     saveState();
     updateAuthUI();
-    showToast('Logged in as Admin_Sarxan (Synced across devices!)', 'success');
+    showToast('Logged in successfully as Admin!', 'success');
     return true;
+  } catch (err) {
+    console.error("Firebase Login Error:", err);
+    showToast('Invalid email or password!', 'error');
+    return false;
   }
-  showToast('Invalid credentials!', 'error');
-  return false;
 }
 
 function logoutAdmin() {
+  if (auth) {
+    signOut(auth).then(() => {
+      signInAnonymously(auth);
+    }).catch(console.warn);
+  }
   appState.isAdmin = false;
   sessionStorage.removeItem('maarif_admin_active');
   saveState();
@@ -671,20 +683,20 @@ function initApp() {
     document.getElementById('loginModal').classList.add('hidden');
   });
 
-  document.getElementById('formModalLogin')?.addEventListener('submit', (e) => {
+  document.getElementById('formModalLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const u = document.getElementById('modalLoginUsername').value;
     const p = document.getElementById('modalLoginPassword').value;
-    if (loginAdmin(u, p)) {
+    if (await loginAdmin(u, p)) {
       document.getElementById('loginModal').classList.add('hidden');
     }
   });
 
-  document.getElementById('formInlineLogin')?.addEventListener('submit', (e) => {
+  document.getElementById('formInlineLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const u = document.getElementById('inlineLoginUsername').value;
     const p = document.getElementById('inlineLoginPassword').value;
-    loginAdmin(u, p);
+    await loginAdmin(u, p);
   });
 
   document.getElementById('btnAdminLogout')?.addEventListener('click', () => {
