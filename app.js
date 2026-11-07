@@ -1,6 +1,6 @@
 // Maarif Schools Cup - app logic + Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getAuth, signInAnonymously, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const N = 'http://www.w3.org/2000/svg', cx = 250, cy = 230;
@@ -62,7 +62,7 @@ let appState = {
 };
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKElrY",
+  apiKey: "AIzaSyBXN22tYVXUAR-L4rMszdoZGxaDWsKELrY",
   authDomain: "maarif-football-project.firebaseapp.com",
   projectId: "maarif-football-project",
   storageBucket: "maarif-football-project.firebasestorage.app",
@@ -74,28 +74,21 @@ const firebaseConfig = {
 let db = null;
 let auth = null;
 let isFirebaseReady = false;
-let remoteLoaded = false; // true once cloud data arrived, so stale localStorage can't overwrite it
 
 try {
   const app = initializeApp(firebaseConfig);
   db = getFirestore(app);
   auth = getAuth(app);
-
-  signInAnonymously(auth).then(() => {
-    isFirebaseReady = true;
-    setupFirestoreListener();
-  }).catch(err => {
-    console.warn("Anonymous auth failed, using local state:", err);
-    showToast('Cloud sign-in failed (' + (err.code || 'error') + ') - enable Anonymous auth in Firebase', 'error');
-  });
+  isFirebaseReady = true;
+  setupFirestoreListener();
 } catch (e) {
   console.warn('Firebase init error, fallback to local storage:', e);
 }
 
 function setupFirestoreListener() {
   if (!db) return;
-  const docRef = doc(db, 'artifacts', firebaseConfig.appId, 'public_data', 'tournament_state');
-
+  const docRef = doc(db, 'maarif_tournaments', 'global_baku_2026');
+  
   onSnapshot(docRef, (docSnap) => {
     if (docSnap.exists()) {
       const remote = docSnap.data();
@@ -104,8 +97,14 @@ function setupFirestoreListener() {
           appState.classes = remote.classes || appState.classes;
           appState.players = remote.players || [];
           appState.weeks = remote.weeks || [];
-          remoteLoaded = true;
-          localStorage.setItem('maarif_cup_premier_v3', JSON.stringify(appState));
+          
+          if (remote.adminActive === true && !appState.isAdmin) {
+            appState.isAdmin = true;
+            updateAuthUI();
+          } else if (remote.adminActive === false && appState.isAdmin) {
+            appState.isAdmin = false;
+            updateAuthUI();
+          }
 
           renderLeagueTable();
           renderFixtures();
@@ -118,12 +117,10 @@ function setupFirestoreListener() {
         }
       }
     } else {
-      remoteLoaded = true;
       saveState();
     }
   }, (error) => {
-    console.warn('Firestore listener error:', error.code, error.message);
-    showToast('Cloud read blocked (' + (error.code || 'error') + ') - check Firestore rules', 'error');
+    console.warn('Firestore listener fallback to LocalStorage:', error.message);
   });
 }
 
@@ -131,22 +128,22 @@ async function saveState() {
   localStorage.setItem('maarif_cup_premier_v3', JSON.stringify(appState));
   if (db && isFirebaseReady) {
     try {
-      const docRef = doc(db, 'artifacts', firebaseConfig.appId, 'public_data', 'tournament_state');
+      const docRef = doc(db, 'maarif_tournaments', 'global_baku_2026');
       await setDoc(docRef, {
         classes: appState.classes,
         players: appState.players,
         weeks: appState.weeks,
+        adminActive: appState.isAdmin,
         updatedAt: new Date().toISOString()
       }, { merge: true });
     } catch (err) {
-      console.warn("Cloud save error:", err.code, err.message);
-      showToast('Saved on this device only - cloud blocked (' + (err.code || 'error') + ')', 'error');
+      console.warn("Cloud save error, fallback to local:", err.message);
     }
   }
 }
 
 function loadState() {
-  const saved = remoteLoaded ? null : localStorage.getItem('maarif_cup_premier_v3');
+  const saved = localStorage.getItem('maarif_cup_premier_v3');
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
@@ -191,7 +188,7 @@ function calculateStandings() {
       if (m.homeScore !== null && m.awayScore !== null && m.homeScore !== undefined && m.awayScore !== undefined && m.homeScore !== '' && m.awayScore !== '') {
         const hs = parseInt(m.homeScore, 10);
         const as = parseInt(m.awayScore, 10);
-
+        
         if (standings[m.homeTeamId] && standings[m.awayTeamId]) {
           const h = standings[m.homeTeamId];
           const a = standings[m.awayTeamId];
@@ -224,7 +221,7 @@ function renderLeagueTable() {
   const tbody = document.getElementById('leagueTableBody');
   if (!tbody) return;
   const data = calculateStandings();
-
+  
   if (data.length === 0) {
     tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-gray-400">No classes registered yet.</td></tr>`;
     return;
@@ -481,17 +478,24 @@ function updateAuthUI() {
   renderClasses();
 }
 
-function loginAdmin(user, pass) {
-  if (user === 'Admin_Sarxan' && pass === '097Sarxan.hoca/87') {
+async function loginAdmin(email, pass) {
+  if (!auth) {
+    showToast('Firebase Auth not initialized!', 'error');
+    return false;
+  }
+  try {
+    await signInWithEmailAndPassword(auth, (email || '').trim(), (pass || '').trim());
     appState.isAdmin = true;
     sessionStorage.setItem('maarif_admin_active', 'true');
     saveState();
     updateAuthUI();
-    showToast('Logged in as Admin_Sarxan (Synced across devices!)', 'success');
+    showToast('Logged in successfully as Admin!', 'success');
     return true;
+  } catch (err) {
+    console.error("Firebase Login Error:", err);
+    showToast('Invalid email or password!', 'error');
+    return false;
   }
-  showToast('Invalid credentials!', 'error');
-  return false;
 }
 
 function logoutAdmin() {
@@ -507,11 +511,11 @@ window.openAddMatchModal = function(weekId) {
   if (!week) return;
   document.getElementById('matchWeekId').value = weekId;
   document.getElementById('addMatchModalTitle').textContent = `Add Match to ${week.title}`;
-
+  
   const homeSel = document.getElementById('matchHomeTeam');
   const awaySel = document.getElementById('matchAwayTeam');
   const opts = appState.classes.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
+  
   homeSel.innerHTML = opts;
   awaySel.innerHTML = opts;
   if (appState.classes.length > 1) awaySel.selectedIndex = 1;
@@ -671,20 +675,21 @@ function initApp() {
     document.getElementById('loginModal').classList.add('hidden');
   });
 
-  document.getElementById('formModalLogin')?.addEventListener('submit', (e) => {
+  document.getElementById('formModalLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const u = document.getElementById('modalLoginUsername').value;
     const p = document.getElementById('modalLoginPassword').value;
-    if (loginAdmin(u, p)) {
+    const success = await loginAdmin(u, p);
+    if (success) {
       document.getElementById('loginModal').classList.add('hidden');
     }
   });
 
-  document.getElementById('formInlineLogin')?.addEventListener('submit', (e) => {
+  document.getElementById('formInlineLogin')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const u = document.getElementById('inlineLoginUsername').value;
     const p = document.getElementById('inlineLoginPassword').value;
-    loginAdmin(u, p);
+    await loginAdmin(u, p);
   });
 
   document.getElementById('btnAdminLogout')?.addEventListener('click', () => {
@@ -799,7 +804,7 @@ function initApp() {
     }
   });
 
-  document.getElementById('btnCloseAddPlayerModal')?.addEventListener('click', () => {
+    document.getElementById('btnCloseAddPlayerModal')?.addEventListener('click', () => {
     document.getElementById('addPlayerModal').classList.add('hidden');
   });
   document.getElementById('formAddPlayer')?.addEventListener('submit', (e) => {
@@ -862,19 +867,10 @@ function initApp() {
     }
   });
 
-  document.getElementById('btnExportHtml')?.addEventListener('click', () => {
-    const blob = new Blob([document.documentElement.outerHTML], { type: "text/html" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "index.html";
-    a.click();
-    showToast('Downloaded updated index.html!', 'success');
-  });
-
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');
     document.documentElement.classList.toggle('light');
-    appState.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
+    app.state.theme = document.documentElement.classList.contains('dark') ? 'dark' : 'light';
   };
   document.getElementById('btnToggleTheme')?.addEventListener('click', toggleTheme);
   document.getElementById('btnToggleThemeMob')?.addEventListener('click', toggleTheme);
