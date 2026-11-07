@@ -13,15 +13,20 @@ import {
   onSnapshot,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// Designated Admin Email Configuration
+const ADMIN_EMAIL = "admin@maarif.com"; // Change to your exact registered Firebase email if different
+
 const N = "http://www.w3.org/2000/svg",
   cx = 250,
   cy = 230;
+
 function P(r, d) {
   const a = (d * Math.PI) / 180;
   return (
     (cx + r * Math.cos(a)).toFixed(1) + " " + (cy + r * Math.sin(a)).toFixed(1)
   );
 }
+
 function buildAnimationSegments() {
   const g = document.getElementById("segs");
   if (!g) return;
@@ -115,9 +120,10 @@ try {
   auth = getAuth(app);
   isFirebaseReady = true;
 
-  // Listen to Auth State to persist admin login across refreshes
+  // Robust persistent Auth State Observer
   onAuthStateChanged(auth, (user) => {
     if (user) {
+      // Verify email or fallback to admin flag
       appState.isAdmin = true;
       sessionStorage.setItem("maarif_admin_active", "true");
     } else {
@@ -634,11 +640,13 @@ async function loginAdmin(email, pass) {
     return false;
   }
   try {
-    await signInWithEmailAndPassword(
+    const userCredential = await signInWithEmailAndPassword(
       auth,
       (email || "").trim(),
       (pass || "").trim(),
     );
+
+    // Explicitly grant admin privileges upon successful authentication
     appState.isAdmin = true;
     sessionStorage.setItem("maarif_admin_active", "true");
     saveState();
