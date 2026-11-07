@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /maarif_tournaments/{tournamentId} {
+      // Tournament data is public to read; only a server-authorized admin may write.
+      allow read: if true;
+      allow create, update, delete: if request.auth != null
+        && request.auth.token.admin == true;
+    }
+  }
+}
