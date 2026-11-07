@@ -3,6 +3,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import {
   getAuth,
   signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
   getFirestore,
@@ -112,6 +114,19 @@ try {
   db = getFirestore(app);
   auth = getAuth(app);
   isFirebaseReady = true;
+
+  // Listen to Auth State to persist admin login across refreshes
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      appState.isAdmin = true;
+      sessionStorage.setItem("maarif_admin_active", "true");
+    } else {
+      appState.isAdmin = false;
+      sessionStorage.removeItem("maarif_admin_active");
+    }
+    updateAuthUI();
+  });
+
   setupFirestoreListener();
 } catch (e) {
   console.warn("Firebase init error, fallback to local storage:", e);
@@ -131,14 +146,6 @@ function setupFirestoreListener() {
             appState.classes = remote.classes || appState.classes;
             appState.players = remote.players || [];
             appState.weeks = remote.weeks || [];
-
-            if (remote.adminActive === true && !appState.isAdmin) {
-              appState.isAdmin = true;
-              updateAuthUI();
-            } else if (remote.adminActive === false && appState.isAdmin) {
-              appState.isAdmin = false;
-              updateAuthUI();
-            }
 
             renderLeagueTable();
             renderFixtures();
@@ -645,7 +652,14 @@ async function loginAdmin(email, pass) {
   }
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
+  if (auth) {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("Sign out error:", e);
+    }
+  }
   appState.isAdmin = false;
   sessionStorage.removeItem("maarif_admin_active");
   saveState();
