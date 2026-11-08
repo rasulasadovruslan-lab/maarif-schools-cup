@@ -114,8 +114,7 @@ const DATA_APP_ID = "1:673595498743:web:347b8ddf759b3531c273f2";
 
 // ====== ADMIN ACCOUNT (create this user in Firebase Console > Authentication) ======
 const ADMIN_EMAIL = "rasulasadovruslan@gmail.com";
-// Name shown in the UI and the ONLY username the login box accepts (maps to ADMIN_EMAIL)
-const ADMIN_DISPLAY = "admin@gmail.com";
+const ADMIN_USERNAME = "Admin_Sarxan"; // typing this in the username box maps to ADMIN_EMAIL
 let listenerStarted = false;
 
 let db = null;
@@ -879,7 +878,7 @@ function updateAuthUI() {
     if (dot)
       dot.className =
         "w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400";
-    if (text) text.textContent = ADMIN_DISPLAY;
+    if (text) text.textContent = "Admin_Sarxan";
     if (btn) btn.textContent = "Logout";
     if (btnMob) btnMob.textContent = "Logout";
     if (inlinePrompt) inlinePrompt.classList.add("hidden");
@@ -908,10 +907,10 @@ function updateAuthUI() {
 }
 
 async function loginAdmin(user, pass) {
-  const id = (user || "").trim().toLowerCase();
-  // Only the real admin email or its display alias is accepted. Anything else is rejected.
-  const email =
-    id === ADMIN_EMAIL.toLowerCase() || id === ADMIN_DISPLAY.toLowerCase()
+  const id = (user || "").trim();
+  const email = id.includes("@")
+    ? id
+    : id.toLowerCase() === ADMIN_USERNAME.toLowerCase()
       ? ADMIN_EMAIL
       : null;
 
@@ -933,10 +932,7 @@ async function loginAdmin(user, pass) {
     }
     appState.isAdmin = true;
     updateAuthUI();
-    showToast(
-      "Logged in as " + ADMIN_DISPLAY + " (Synced across devices!)",
-      "success",
-    );
+    showToast("Logged in as Admin_Sarxan (Synced across devices!)", "success");
     return true;
   } catch (err) {
     console.warn("Login failed:", err.code, err.message);
