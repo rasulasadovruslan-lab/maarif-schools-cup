@@ -1,4 +1,7 @@
 // Maarif Schools Cup - app logic + Firebase
+
+const ADMIN_EMAIL = "rasulasadovruslan@gmail.com";
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
   getAuth,
@@ -612,16 +615,19 @@ function updateAdminStats() {
   }
 }
 
-
 // ===================== NEWS & INJURIES =====================
 function escapeHtml(value) {
-  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[ch]);
+  return String(value ?? "").replace(
+    /[&<>"']/g,
+    (ch) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      })[ch],
+  );
 }
 
 function injuryBadge() {
@@ -633,10 +639,26 @@ function injuryIcon() {
 }
 
 const NEWS_CATEGORIES = {
-  news: { label: "News", icon: "fa-newspaper", cls: "bg-maarifAccent/15 text-maarifAccent border-maarifAccent/30" },
-  match: { label: "Match Report", icon: "fa-futbol", cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
-  injury: { label: "Injury Update", icon: "fa-bandage", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
-  announcement: { label: "Announcement", icon: "fa-bullhorn", cls: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
+  news: {
+    label: "News",
+    icon: "fa-newspaper",
+    cls: "bg-maarifAccent/15 text-maarifAccent border-maarifAccent/30",
+  },
+  match: {
+    label: "Match Report",
+    icon: "fa-futbol",
+    cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
+  },
+  injury: {
+    label: "Injury Update",
+    icon: "fa-bandage",
+    cls: "bg-red-500/15 text-red-400 border-red-500/30",
+  },
+  announcement: {
+    label: "Announcement",
+    icon: "fa-bullhorn",
+    cls: "bg-amber-500/15 text-amber-500 border-amber-500/30",
+  },
 };
 
 function formatNewsDate(iso) {
@@ -707,9 +729,14 @@ function renderInjuryReport() {
     return;
   }
 
-  const teamName = (p) => appState.classes.find((c) => c.id === p.teamId)?.name || "";
+  const teamName = (p) =>
+    appState.classes.find((c) => c.id === p.teamId)?.name || "";
   list.innerHTML = [...injured]
-    .sort((a, b) => teamName(a).localeCompare(teamName(b)) || String(a.name).localeCompare(String(b.name)))
+    .sort(
+      (a, b) =>
+        teamName(a).localeCompare(teamName(b)) ||
+        String(a.name).localeCompare(String(b.name)),
+    )
     .map((p) => {
       const team = appState.classes.find((c) => c.id === p.teamId);
       return `
@@ -753,13 +780,21 @@ window.toggleInjury = function (playerId) {
 
 window.openNewsModal = function (newsId) {
   if (!appState.isAdmin) return;
-  const item = newsId ? (appState.news || []).find((n) => n.id === newsId) : null;
+  const item = newsId
+    ? (appState.news || []).find((n) => n.id === newsId)
+    : null;
   document.getElementById("newsIdInput").value = item ? item.id : "";
   document.getElementById("newsTitleInput").value = item ? item.title : "";
-  document.getElementById("newsCategoryInput").value = item ? item.category || "news" : "news";
+  document.getElementById("newsCategoryInput").value = item
+    ? item.category || "news"
+    : "news";
   document.getElementById("newsBodyInput").value = item ? item.body : "";
-  document.getElementById("newsPinInput").checked = item ? !!item.pinned : false;
-  document.getElementById("newsModalTitle").textContent = item ? "Edit News" : "Post News";
+  document.getElementById("newsPinInput").checked = item
+    ? !!item.pinned
+    : false;
+  document.getElementById("newsModalTitle").textContent = item
+    ? "Edit News"
+    : "Post News";
   document.getElementById("newsModal").classList.remove("hidden");
   document.getElementById("newsModal").classList.add("flex");
 };
@@ -783,17 +818,23 @@ window.toggleNewsPin = function (newsId) {
 };
 
 function switchTab(tabId) {
-  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
-    (t) => {
-      const tabEl = document.getElementById(`tab-${t}`);
-      const btnEl = document.getElementById(`tabBtn-${t}`);
-      if (tabEl) tabEl.classList.add("hidden");
-      if (btnEl) {
-        btnEl.className =
-          "px-3 py-2 rounded-lg text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:text-maarifAccent flex items-center gap-1.5 whitespace-nowrap shrink-0";
-      }
-    },
-  );
+  [
+    "league",
+    "news",
+    "fixtures",
+    "classes",
+    "scorers",
+    "assists",
+    "admin",
+  ].forEach((t) => {
+    const tabEl = document.getElementById(`tab-${t}`);
+    const btnEl = document.getElementById(`tabBtn-${t}`);
+    if (tabEl) tabEl.classList.add("hidden");
+    if (btnEl) {
+      btnEl.className =
+        "px-3 py-2 rounded-lg text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:text-maarifAccent flex items-center gap-1.5 whitespace-nowrap shrink-0";
+    }
+  });
 
   const activeTab = document.getElementById(`tab-${tabId}`);
   const activeBtn = document.getElementById(`tabBtn-${tabId}`);
@@ -1030,13 +1071,19 @@ function initApp() {
   renderAssists();
   updateAdminStats();
 
-  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
-    (t) => {
-      document
-        .getElementById(`tabBtn-${t}`)
-        ?.addEventListener("click", () => switchTab(t));
-    },
-  );
+  [
+    "league",
+    "news",
+    "fixtures",
+    "classes",
+    "scorers",
+    "assists",
+    "admin",
+  ].forEach((t) => {
+    document
+      .getElementById(`tabBtn-${t}`)
+      ?.addEventListener("click", () => switchTab(t));
+  });
 
   document.getElementById("btnAuthAction")?.addEventListener("click", () => {
     if (appState.isAdmin) {
@@ -1286,10 +1333,12 @@ function initApp() {
   document.getElementById("btnOpenNewsModal")?.addEventListener("click", () => {
     window.openNewsModal();
   });
-  document.getElementById("btnCloseNewsModal")?.addEventListener("click", () => {
-    document.getElementById("newsModal").classList.add("hidden");
-    document.getElementById("newsModal").classList.remove("flex");
-  });
+  document
+    .getElementById("btnCloseNewsModal")
+    ?.addEventListener("click", () => {
+      document.getElementById("newsModal").classList.add("hidden");
+      document.getElementById("newsModal").classList.remove("flex");
+    });
   document.getElementById("formNews")?.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!appState.isAdmin) return;
