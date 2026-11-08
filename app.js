@@ -114,7 +114,8 @@ const DATA_APP_ID = "1:673595498743:web:347b8ddf759b3531c273f2";
 
 // ====== ADMIN ACCOUNT (create this user in Firebase Console > Authentication) ======
 const ADMIN_EMAIL = "rasulasadovruslan@gmail.com";
-const ADMIN_USERNAME = "Admin_Sarxan"; // typing this in the username box maps to ADMIN_EMAIL
+// Name shown in the UI and the ONLY username the login box accepts (maps to ADMIN_EMAIL)
+const ADMIN_DISPLAY = "admin@gmail.com";
 let listenerStarted = false;
 
 let db = null;
@@ -634,19 +635,16 @@ function updateAdminStats() {
   }
 }
 
+
 // ===================== NEWS & INJURIES =====================
 function escapeHtml(value) {
-  return String(value ?? "").replace(
-    /[&<>"']/g,
-    (ch) =>
-      ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;",
-      })[ch],
-  );
+  return String(value ?? "").replace(/[&<>"']/g, (ch) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[ch]);
 }
 
 function injuryBadge() {
@@ -658,26 +656,10 @@ function injuryIcon() {
 }
 
 const NEWS_CATEGORIES = {
-  news: {
-    label: "News",
-    icon: "fa-newspaper",
-    cls: "bg-maarifAccent/15 text-maarifAccent border-maarifAccent/30",
-  },
-  match: {
-    label: "Match Report",
-    icon: "fa-futbol",
-    cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30",
-  },
-  injury: {
-    label: "Injury Update",
-    icon: "fa-bandage",
-    cls: "bg-red-500/15 text-red-400 border-red-500/30",
-  },
-  announcement: {
-    label: "Announcement",
-    icon: "fa-bullhorn",
-    cls: "bg-amber-500/15 text-amber-500 border-amber-500/30",
-  },
+  news: { label: "News", icon: "fa-newspaper", cls: "bg-maarifAccent/15 text-maarifAccent border-maarifAccent/30" },
+  match: { label: "Match Report", icon: "fa-futbol", cls: "bg-emerald-500/15 text-emerald-500 border-emerald-500/30" },
+  injury: { label: "Injury Update", icon: "fa-bandage", cls: "bg-red-500/15 text-red-400 border-red-500/30" },
+  announcement: { label: "Announcement", icon: "fa-bullhorn", cls: "bg-amber-500/15 text-amber-500 border-amber-500/30" },
 };
 
 function formatNewsDate(iso) {
@@ -748,14 +730,9 @@ function renderInjuryReport() {
     return;
   }
 
-  const teamName = (p) =>
-    appState.classes.find((c) => c.id === p.teamId)?.name || "";
+  const teamName = (p) => appState.classes.find((c) => c.id === p.teamId)?.name || "";
   list.innerHTML = [...injured]
-    .sort(
-      (a, b) =>
-        teamName(a).localeCompare(teamName(b)) ||
-        String(a.name).localeCompare(String(b.name)),
-    )
+    .sort((a, b) => teamName(a).localeCompare(teamName(b)) || String(a.name).localeCompare(String(b.name)))
     .map((p) => {
       const team = appState.classes.find((c) => c.id === p.teamId);
       return `
@@ -799,21 +776,13 @@ window.toggleInjury = function (playerId) {
 
 window.openNewsModal = function (newsId) {
   if (!appState.isAdmin) return;
-  const item = newsId
-    ? (appState.news || []).find((n) => n.id === newsId)
-    : null;
+  const item = newsId ? (appState.news || []).find((n) => n.id === newsId) : null;
   document.getElementById("newsIdInput").value = item ? item.id : "";
   document.getElementById("newsTitleInput").value = item ? item.title : "";
-  document.getElementById("newsCategoryInput").value = item
-    ? item.category || "news"
-    : "news";
+  document.getElementById("newsCategoryInput").value = item ? item.category || "news" : "news";
   document.getElementById("newsBodyInput").value = item ? item.body : "";
-  document.getElementById("newsPinInput").checked = item
-    ? !!item.pinned
-    : false;
-  document.getElementById("newsModalTitle").textContent = item
-    ? "Edit News"
-    : "Post News";
+  document.getElementById("newsPinInput").checked = item ? !!item.pinned : false;
+  document.getElementById("newsModalTitle").textContent = item ? "Edit News" : "Post News";
   document.getElementById("newsModal").classList.remove("hidden");
   document.getElementById("newsModal").classList.add("flex");
 };
@@ -837,23 +806,17 @@ window.toggleNewsPin = function (newsId) {
 };
 
 function switchTab(tabId) {
-  [
-    "league",
-    "news",
-    "fixtures",
-    "classes",
-    "scorers",
-    "assists",
-    "admin",
-  ].forEach((t) => {
-    const tabEl = document.getElementById(`tab-${t}`);
-    const btnEl = document.getElementById(`tabBtn-${t}`);
-    if (tabEl) tabEl.classList.add("hidden");
-    if (btnEl) {
-      btnEl.className =
-        "px-3 py-2 rounded-lg text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:text-maarifAccent flex items-center gap-1.5 whitespace-nowrap shrink-0";
-    }
-  });
+  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
+    (t) => {
+      const tabEl = document.getElementById(`tab-${t}`);
+      const btnEl = document.getElementById(`tabBtn-${t}`);
+      if (tabEl) tabEl.classList.add("hidden");
+      if (btnEl) {
+        btnEl.className =
+          "px-3 py-2 rounded-lg text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:text-maarifAccent flex items-center gap-1.5 whitespace-nowrap shrink-0";
+      }
+    },
+  );
 
   const activeTab = document.getElementById(`tab-${tabId}`);
   const activeBtn = document.getElementById(`tabBtn-${tabId}`);
@@ -878,7 +841,7 @@ function updateAuthUI() {
     if (dot)
       dot.className =
         "w-2 h-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400";
-    if (text) text.textContent = "Admin_Sarxan";
+    if (text) text.textContent = ADMIN_DISPLAY;
     if (btn) btn.textContent = "Logout";
     if (btnMob) btnMob.textContent = "Logout";
     if (inlinePrompt) inlinePrompt.classList.add("hidden");
@@ -907,12 +870,9 @@ function updateAuthUI() {
 }
 
 async function loginAdmin(user, pass) {
-  const id = (user || "").trim();
-  const email = id.includes("@")
-    ? id
-    : id.toLowerCase() === ADMIN_USERNAME.toLowerCase()
-      ? ADMIN_EMAIL
-      : null;
+  const id = (user || "").trim().toLowerCase();
+  // Only the admin alias is accepted. Anything else is rejected.
+  const email = id === ADMIN_DISPLAY.toLowerCase() ? ADMIN_EMAIL : null;
 
   if (!email || !pass) {
     showToast("Invalid credentials!", "error");
@@ -932,7 +892,7 @@ async function loginAdmin(user, pass) {
     }
     appState.isAdmin = true;
     updateAuthUI();
-    showToast("Logged in as Admin_Sarxan (Synced across devices!)", "success");
+    showToast("Logged in as " + ADMIN_DISPLAY + " (Synced across devices!)", "success");
     return true;
   } catch (err) {
     console.warn("Login failed:", err.code, err.message);
@@ -1125,19 +1085,13 @@ function initApp() {
   renderAssists();
   updateAdminStats();
 
-  [
-    "league",
-    "news",
-    "fixtures",
-    "classes",
-    "scorers",
-    "assists",
-    "admin",
-  ].forEach((t) => {
-    document
-      .getElementById(`tabBtn-${t}`)
-      ?.addEventListener("click", () => switchTab(t));
-  });
+  ["league", "news", "fixtures", "classes", "scorers", "assists", "admin"].forEach(
+    (t) => {
+      document
+        .getElementById(`tabBtn-${t}`)
+        ?.addEventListener("click", () => switchTab(t));
+    },
+  );
 
   document.getElementById("btnAuthAction")?.addEventListener("click", () => {
     if (appState.isAdmin) {
@@ -1163,20 +1117,18 @@ function initApp() {
       document.getElementById("loginModal").classList.add("hidden");
     });
 
-  document
-    .getElementById("formModalLogin")
-    ?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const u = document.getElementById("modalLoginUsername").value;
-      const p = document.getElementById("modalLoginPassword").value;
-      const submitBtn = e.target.querySelector('[type="submit"]');
-      if (submitBtn) submitBtn.disabled = true;
-      const ok = await loginAdmin(u, p);
-      if (submitBtn) submitBtn.disabled = false;
-      if (ok) {
-        document.getElementById("loginModal").classList.add("hidden");
-      }
-    });
+  document.getElementById("formModalLogin")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const u = document.getElementById("modalLoginUsername").value;
+    const p = document.getElementById("modalLoginPassword").value;
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    const ok = await loginAdmin(u, p);
+    if (submitBtn) submitBtn.disabled = false;
+    if (ok) {
+      document.getElementById("loginModal").classList.add("hidden");
+    }
+  });
 
   document
     .getElementById("formInlineLogin")
@@ -1396,12 +1348,10 @@ function initApp() {
   document.getElementById("btnOpenNewsModal")?.addEventListener("click", () => {
     window.openNewsModal();
   });
-  document
-    .getElementById("btnCloseNewsModal")
-    ?.addEventListener("click", () => {
-      document.getElementById("newsModal").classList.add("hidden");
-      document.getElementById("newsModal").classList.remove("flex");
-    });
+  document.getElementById("btnCloseNewsModal")?.addEventListener("click", () => {
+    document.getElementById("newsModal").classList.add("hidden");
+    document.getElementById("newsModal").classList.remove("flex");
+  });
   document.getElementById("formNews")?.addEventListener("submit", (e) => {
     e.preventDefault();
     if (!appState.isAdmin) return;
