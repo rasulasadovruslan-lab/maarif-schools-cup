@@ -1,11 +1,11 @@
 // Maarif Schools Cup - app logic + Firebase
-
-const ADMIN_EMAIL = "rasulasadovruslan@gmail.com";
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import {
   getAuth,
   signInAnonymously,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
 } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import {
   getFirestore,
@@ -112,6 +112,11 @@ const firebaseConfig = {
 // re-create the Firebase web app, or the site will look empty (the data is still safe).
 const DATA_APP_ID = "1:673595498743:web:347b8ddf759b3531c273f2";
 
+// ====== ADMIN ACCOUNT (create this user in Firebase Console > Authentication) ======
+const ADMIN_EMAIL = "rasulasadovruslan@gmail.com";
+const ADMIN_USERNAME = "Admin_Sarxan"; // typing this in the username box maps to ADMIN_EMAIL
+let listenerStarted = false;
+
 let db = null;
 let auth = null;
 let isFirebaseReady = false;
@@ -122,20 +127,37 @@ try {
   db = getFirestore(app);
   auth = getAuth(app);
 
-  signInAnonymously(auth)
-    .then(() => {
-      isFirebaseReady = true;
+  // Single source of truth for "who is logged in". Firebase remembers the
+  // session, so the admin stays logged in after a refresh.
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      // Nobody signed in -> visitor mode (anonymous) so the site can still read data
+      isFirebaseReady = false;
+      signInAnonymously(auth).catch((err) => {
+        console.warn("Anonymous auth failed, using local state:", err);
+        showToast(
+          "Cloud sign-in failed (" +
+            (err.code || "error") +
+            ") - enable Anonymous auth in Firebase",
+          "error",
+        );
+      });
+      return;
+    }
+    isFirebaseReady = true;
+    appState.isAdmin =
+      !user.isAnonymous &&
+      (user.email || "").toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    if (!listenerStarted) {
+      listenerStarted = true;
       setupFirestoreListener();
-    })
-    .catch((err) => {
-      console.warn("Anonymous auth failed, using local state:", err);
-      showToast(
-        "Cloud sign-in failed (" +
-          (err.code || "error") +
-          ") - enable Anonymous auth in Firebase",
-        "error",
-      );
-    });
+    }
+    try {
+      updateAuthUI();
+    } catch (e) {
+      console.warn("UI not ready yet:", e);
+    }
+  });
 } catch (e) {
   console.warn("Firebase init error, fallback to local storage:", e);
 }
@@ -244,9 +266,6 @@ function loadState() {
     } catch (e) {
       console.warn("Failed to parse local storage:", e);
     }
-  }
-  if (sessionStorage.getItem("maarif_admin_active") === "true") {
-    appState.isAdmin = true;
   }
 }
 
@@ -887,24 +906,59 @@ function updateAuthUI() {
   renderInjuryReport();
 }
 
-function loginAdmin(user, pass) {
-  if (user === "Admin_Sarxan" && pass === "097Sarxan.hoca/87") {
+async function loginAdmin(user, pass) {
+  const id = (user || "").trim();
+  const email = id.includes("@")
+    ? id
+    : id.toLowerCase() === ADMIN_USERNAME.toLowerCase()
+      ? ADMIN_EMAIL
+      : null;
+
+  if (!email || !pass) {
+    showToast("Invalid credentials!", "error");
+    return false;
+  }
+  if (!auth) {
+    showToast("Firebase is not ready, refresh the page", "error");
+    return false;
+  }
+
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if ((cred.user.email || "").toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+      await signOut(auth); // valid Firebase user but not the admin
+      showToast("This account is not an admin", "error");
+      return false;
+    }
     appState.isAdmin = true;
-    sessionStorage.setItem("maarif_admin_active", "true");
-    saveState();
     updateAuthUI();
     showToast("Logged in as Admin_Sarxan (Synced across devices!)", "success");
     return true;
+  } catch (err) {
+    console.warn("Login failed:", err.code, err.message);
+    const msgs = {
+      "auth/invalid-credential": "Wrong username or password",
+      "auth/wrong-password": "Wrong username or password",
+      "auth/user-not-found": "Wrong username or password",
+      "auth/invalid-email": "Invalid email",
+      "auth/too-many-requests": "Too many attempts, wait a few minutes",
+      "auth/network-request-failed": "Network error, check your connection",
+      "auth/operation-not-allowed":
+        "Enable Email/Password in Firebase > Authentication > Sign-in method",
+    };
+    showToast(msgs[err.code] || "Login failed (" + err.code + ")", "error");
+    return false;
   }
-  showToast("Invalid credentials!", "error");
-  return false;
 }
 
-function logoutAdmin() {
+async function logoutAdmin() {
   appState.isAdmin = false;
-  sessionStorage.removeItem("maarif_admin_active");
-  saveState();
   updateAuthUI();
+  try {
+    await signOut(auth); // onAuthStateChanged signs back in as anonymous visitor
+  } catch (e) {
+    console.warn("Sign out error:", e);
+  }
   showToast("Logged out successfully");
 }
 
@@ -1109,22 +1163,31 @@ function initApp() {
       document.getElementById("loginModal").classList.add("hidden");
     });
 
-  document.getElementById("formModalLogin")?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const u = document.getElementById("modalLoginUsername").value;
-    const p = document.getElementById("modalLoginPassword").value;
-    if (loginAdmin(u, p)) {
-      document.getElementById("loginModal").classList.add("hidden");
-    }
-  });
+  document
+    .getElementById("formModalLogin")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const u = document.getElementById("modalLoginUsername").value;
+      const p = document.getElementById("modalLoginPassword").value;
+      const submitBtn = e.target.querySelector('[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      const ok = await loginAdmin(u, p);
+      if (submitBtn) submitBtn.disabled = false;
+      if (ok) {
+        document.getElementById("loginModal").classList.add("hidden");
+      }
+    });
 
   document
     .getElementById("formInlineLogin")
-    ?.addEventListener("submit", (e) => {
+    ?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const u = document.getElementById("inlineLoginUsername").value;
       const p = document.getElementById("inlineLoginPassword").value;
-      loginAdmin(u, p);
+      const submitBtn = e.target.querySelector('[type="submit"]');
+      if (submitBtn) submitBtn.disabled = true;
+      await loginAdmin(u, p);
+      if (submitBtn) submitBtn.disabled = false;
     });
 
   document.getElementById("btnAdminLogout")?.addEventListener("click", () => {
