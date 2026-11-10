@@ -22,17 +22,13 @@
         theme: {
           extend: {
             colors: {
-              maarifBg: "#050e24",
-              maarifCard: "#0a1738",
-              maarifAccent: "#00b5e2",
-              maarifAccentHover: "#009cc2",
+              maarifBg: "#000000" /* True Black */,
+              maarifCard: "#0a0a0a",
+              maarifAccent: "#a3e635" /* Neon Lime */,
+              maarifAccentHover: "#84cc16",
             },
             fontFamily: {
               sans: ["Inter", "sans-serif"],
-            },
-            boxShadow: {
-              "apple-dark": "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
-              "apple-light": "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
             },
           },
         },
@@ -40,9 +36,9 @@
     </script>
     <style>
       :root {
-        --bg: #050e24;
+        --bg: #000000;
         --fg: #ffffff;
-        --accent: #00b5e2;
+        --accent: #a3e635;
       }
       html,
       body {
@@ -54,27 +50,18 @@
         transition:
           background-color 0.4s ease,
           color 0.4s ease;
+        overflow-x: hidden;
       }
       .dark body {
         background-color: var(--bg);
         color: var(--fg);
-        background-image: radial-gradient(
-          circle at top right,
-          rgba(0, 181, 226, 0.1),
-          transparent 40%
-        );
       }
       .light body {
-        background-color: #f5f5f7;
-        color: #1d1d1f;
-        background-image: radial-gradient(
-          circle at top right,
-          rgba(0, 181, 226, 0.15),
-          transparent 40%
-        );
+        background-color: #ffffff;
+        color: #000000;
       }
 
-      /* SPLASH ANIMATIONS (Unchanged as requested) */
+      /* SPLASH ANIMATIONS (Kept exactly as requested) */
       .stage {
         position: relative;
         width: min(85vw, 360px);
@@ -143,7 +130,7 @@
         }
       }
 
-      /* Custom scrollbars */
+      /* Custom scrollbars (Hidden on mobile for clean look) */
       ::-webkit-scrollbar {
         width: 6px;
         height: 6px;
@@ -152,45 +139,85 @@
         background: transparent;
       }
       .dark ::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
+        background: rgba(255, 255, 255, 0.15);
         border-radius: 10px;
-      }
-      .dark ::-webkit-scrollbar-thumb:hover {
-        background: rgba(255, 255, 255, 0.3);
       }
       .light ::-webkit-scrollbar-thumb {
-        background: rgba(0, 0, 0, 0.2);
+        background: rgba(0, 0, 0, 0.15);
         border-radius: 10px;
       }
-      .light ::-webkit-scrollbar-thumb:hover {
-        background: rgba(0, 0, 0, 0.3);
-      }
 
-      /* APPLE-STYLE GLASSMORPHISM */
+      /* EXTREME GLASSMORPHISM */
       .dark .glass-panel {
-        background: rgba(10, 23, 56, 0.65);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        background: rgba(10, 10, 10, 0.55);
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
       }
       .light .glass-panel {
-        background: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(24px) saturate(180%);
-        -webkit-backdrop-filter: blur(24px) saturate(180%);
-        border: 1px solid rgba(255, 255, 255, 0.8);
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        background: rgba(255, 255, 255, 0.55);
+        backdrop-filter: blur(24px) saturate(200%);
+        -webkit-backdrop-filter: blur(24px) saturate(200%);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
       }
-
       .dark .card-bg {
-        background-color: rgba(10, 23, 56, 0.8);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        background-color: rgba(15, 15, 15, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
       }
       .light .card-bg {
         background-color: #ffffff;
         border: 1px solid rgba(0, 0, 0, 0.05);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+      }
+
+      /* MOBILE BOTTOM DOCK */
+      .mobile-dock {
+        background: rgba(10, 10, 10, 0.85);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .light .mobile-dock {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid rgba(0, 0, 0, 0.1);
+      }
+
+      /* FLOATING BUBBLES */
+      .bubble {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(
+          135deg,
+          rgba(163, 230, 53, 0.4),
+          rgba(163, 230, 53, 0)
+        );
+        bottom: -50px;
+        animation: floatUp infinite ease-in;
+        pointer-events: none;
+      }
+      .light .bubble {
+        background: linear-gradient(
+          135deg,
+          rgba(163, 230, 53, 0.6),
+          rgba(163, 230, 53, 0)
+        );
+      }
+      @keyframes floatUp {
+        0% {
+          transform: translateY(0) scale(1);
+          opacity: 0;
+        }
+        10% {
+          opacity: 0.6;
+        }
+        90% {
+          opacity: 0.6;
+        }
+        100% {
+          transform: translateY(-100vh) scale(1.5);
+          opacity: 0;
+        }
       }
 
       button,
@@ -198,29 +225,48 @@
       input {
         touch-action: manipulation;
       }
-
-      /* Smooth hover scaling for buttons */
       button {
         transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
       button:active {
-        transform: scale(0.97);
+        transform: scale(0.95);
+      }
+
+      /* Tab Fade Animation */
+      .tab-content {
+        animation: fadeIn 0.3s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
       }
     </style>
   </head>
   <body
-    class="min-h-screen flex flex-col selection:bg-maarifAccent selection:text-maarifBg pb-safe"
+    class="min-h-screen flex flex-col selection:bg-maarifAccent selection:text-black pb-24 lg:pb-0 relative"
   >
+    <!-- BACKGROUND BUBBLES CONTAINER -->
+    <div
+      id="bubbles-container"
+      class="fixed inset-0 overflow-hidden pointer-events-none z-0"
+    ></div>
+
     <!-- TOAST NOTIFICATION CONTAINER -->
     <div
       id="toastContainer"
       class="fixed top-4 left-4 right-4 sm:left-auto sm:right-5 sm:max-w-sm z-[100] flex flex-col gap-2 pointer-events-none"
     ></div>
 
-    <!-- INTRO ANIMATION SPLASH SCREEN (Kept as requested) -->
+    <!-- INTRO ANIMATION SPLASH SCREEN -->
     <div
       id="splashScreen"
-      class="fixed inset-0 z-50 bg-[#050e24] flex flex-col items-center justify-center p-6 transition-opacity duration-700"
+      class="fixed inset-0 z-50 bg-[#000000] flex flex-col items-center justify-center p-6 transition-opacity duration-700"
     >
       <div class="stage" id="stage">
         <svg id="s" viewBox="0 0 500 560" xmlns="http://www.w3.org/2000/svg">
@@ -237,12 +283,12 @@
           <g class="star">
             <polygon
               id="starp"
-              fill="#050e24"
+              fill="#000000"
               stroke="#fff"
               stroke-width="3"
               stroke-linejoin="round"
             />
-            <circle cx="250" cy="230" r="9" fill="#00b5e2" />
+            <circle cx="250" cy="230" r="9" fill="#a3e635" />
           </g>
           <g class="txt">
             <text
@@ -258,8 +304,8 @@
             >
               MAARIF
             </text>
-            <rect x="70" y="477" width="62" height="2" fill="#00b5e2" />
-            <rect x="368" y="477" width="62" height="2" fill="#00b5e2" />
+            <rect x="70" y="477" width="62" height="2" fill="#a3e635" />
+            <rect x="368" y="477" width="62" height="2" fill="#a3e635" />
             <text
               x="250"
               y="484"
@@ -294,7 +340,7 @@
       >
         <button
           id="btnEnterPortal"
-          class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm tracking-wide shadow-lg shadow-maarifAccent/30 transition transform"
+          class="w-full sm:w-auto px-8 py-3.5 rounded-full bg-maarifAccent text-black font-bold text-sm tracking-wide shadow-[0_0_20px_rgba(163,230,53,0.4)] transition transform"
         >
           <i class="fa-solid fa-trophy mr-2"></i> Enter Premier League
         </button>
@@ -302,128 +348,116 @@
     </div>
 
     <!-- MAIN APPLICATION CONTAINER -->
-    <div id="mainApp" class="hidden flex-col min-h-screen">
-      <!-- NAVBAR -->
+    <div id="mainApp" class="hidden flex-col min-h-screen relative z-10">
+      <!-- HEADER -->
       <header
-        class="glass-panel sticky top-0 z-30 border-b px-4 sm:px-6 py-3 flex flex-col lg:flex-row items-center justify-between gap-4 rounded-b-2xl mx-2 mt-2"
+        class="glass-panel sticky top-0 z-30 border-b px-4 sm:px-6 py-3 flex items-center justify-between gap-4 mx-2 mt-2 rounded-2xl"
       >
-        <div class="flex items-center justify-between w-full lg:w-auto">
-          <div class="flex items-center space-x-3 cursor-pointer" id="navLogo">
-            <div
-              class="w-10 h-10 rounded-2xl bg-maarifAccent flex items-center justify-center text-maarifBg font-black text-lg shadow-sm shadow-maarifAccent/40"
-            >
-              <i class="fa-solid fa-futbol"></i>
-            </div>
-            <div>
-              <h1
-                class="font-bold text-base sm:text-lg tracking-tight flex items-center gap-2 flex-wrap"
-              >
-                MAARIF CUP
-                <span
-                  class="text-[10px] px-2.5 py-0.5 rounded-full bg-maarifAccent/10 text-maarifAccent border border-maarifAccent/20 font-semibold"
-                  >2026</span
-                >
-              </h1>
-              <p
-                class="text-[11px] text-gray-500 dark:text-gray-400 font-medium"
-              >
-                Class Championship
-              </p>
-            </div>
+        <div class="flex items-center space-x-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-maarifAccent flex items-center justify-center text-black font-black text-lg"
+          >
+            <i class="fa-solid fa-futbol"></i>
           </div>
-          <div class="flex items-center gap-2 lg:hidden">
-            <button
-              id="btnToggleThemeMob"
-              class="p-2.5 rounded-xl bg-gray-200/50 dark:bg-white/10 text-gray-700 dark:text-gray-200 text-xs"
+          <div>
+            <h1
+              class="font-bold text-base sm:text-lg tracking-tight flex items-center gap-2"
             >
-              <i class="fa-solid fa-sun hidden dark:inline text-amber-400"></i>
-              <i class="fa-solid fa-moon inline dark:hidden text-slate-700"></i>
-            </button>
-            <button
-              id="btnAuthActionMob"
-              class="px-4 py-2 rounded-xl bg-maarifAccent/10 text-maarifAccent text-xs font-bold border border-maarifAccent/20"
-            >
-              Admin
-            </button>
+              MAARIF CUP
+              <span
+                class="text-[10px] px-2 py-0.5 rounded-full bg-maarifAccent/10 text-maarifAccent border border-maarifAccent/20 font-bold"
+                >2026</span
+              >
+            </h1>
+            <p class="text-[11px] text-gray-500 font-medium hidden sm:block">
+              Class Championship
+            </p>
           </div>
         </div>
 
-        <!-- NAVIGATION TABS -->
-        <nav
-          class="flex items-center gap-1.5 overflow-x-auto w-full lg:w-auto py-1 no-scrollbar"
-        >
+        <!-- DESKTOP NAVIGATION TABS -->
+        <nav class="hidden lg:flex items-center gap-1.5">
           <button
             id="tabBtn-league"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition bg-maarifAccent text-maarifBg shadow-sm flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition bg-maarifAccent text-black shadow-lg shadow-maarifAccent/20 flex items-center gap-2"
           >
             <i class="fa-solid fa-table-list"></i> Table
           </button>
           <button
             id="tabBtn-news"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
             <i class="fa-solid fa-newspaper"></i> News
           </button>
           <button
             id="tabBtn-fixtures"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
             <i class="fa-solid fa-calendar-days"></i> Fixtures
           </button>
           <button
             id="tabBtn-classes"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
             <i class="fa-solid fa-school"></i> Teams
           </button>
           <button
             id="tabBtn-scorers"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
             <i class="fa-solid fa-person-running"></i> Scorers
           </button>
           <button
             id="tabBtn-assists"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
             <i class="fa-solid fa-hands-helping"></i> Assists
           </button>
           <button
             id="tabBtn-admin"
-            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-600 dark:text-gray-300 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 whitespace-nowrap shrink-0"
+            class="px-4 py-2 rounded-xl text-xs font-semibold transition text-gray-500 hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2"
           >
-            <i class="fa-solid fa-user-gear" id="adminTabIcon"></i> Admin
+            <i class="fa-solid fa-user-gear"></i> Admin
           </button>
         </nav>
 
-        <div class="hidden lg:flex items-center gap-3">
+        <div class="flex items-center gap-3">
           <button
             id="btnToggleTheme"
-            class="p-2.5 rounded-xl bg-gray-200/50 dark:bg-white/10 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-white/20 transition text-sm"
-            title="Toggle Theme"
+            class="p-2.5 rounded-xl bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/20 transition text-sm"
           >
-            <i class="fa-solid fa-sun hidden dark:inline text-amber-400"></i>
-            <i class="fa-solid fa-moon inline dark:hidden text-slate-700"></i>
+            <i class="fa-solid fa-sun hidden dark:inline text-maarifAccent"></i>
+            <i class="fa-solid fa-moon inline dark:hidden text-black"></i>
           </button>
+
+          <!-- Desktop Auth Status -->
           <div
-            class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-black/5 dark:bg-white/5 border border-gray-200 dark:border-white/10 text-xs font-medium"
+            class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-xs font-medium"
           >
             <span class="w-2 h-2 rounded-full bg-gray-400" id="authDot"></span>
             <span id="authStatusText">Guest</span>
           </div>
           <button
             id="btnAuthAction"
-            class="px-4 py-2 rounded-xl bg-maarifAccent/10 hover:bg-maarifAccent/20 text-maarifAccent text-xs font-bold border border-maarifAccent/20 transition"
+            class="hidden lg:block px-4 py-2 rounded-xl bg-maarifAccent text-black text-xs font-bold transition shadow-md shadow-maarifAccent/20"
           >
             Admin Login
+          </button>
+
+          <!-- Mobile Auth Button -->
+          <button
+            id="btnAuthActionMob"
+            class="lg:hidden px-4 py-2 rounded-xl bg-maarifAccent text-black text-xs font-bold shadow-md shadow-maarifAccent/20"
+          >
+            Admin
           </button>
         </div>
       </header>
 
       <!-- MAIN BODY CONTENT -->
-      <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8">
+      <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 pb-32">
         <!-- LEAGUE TAB -->
-        <section id="tab-league" class="space-y-6">
+        <section id="tab-league" class="space-y-6 tab-content">
           <div
             class="card-bg p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           >
@@ -431,45 +465,71 @@
               <h2
                 class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3"
               >
-                <i class="fa-solid fa-trophy text-amber-400"></i> Premier League
-                Table
+                <i class="fa-solid fa-trophy text-maarifAccent"></i> Premier
+                League Table
               </h2>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-              >
-                Single-league standings. Real-time cloud sync active.
+              <p class="text-sm text-gray-500 mt-2 font-medium">
+                Real-time cloud sync active.
               </p>
             </div>
             <button
               id="btnRefreshLeague"
-              class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-xs font-semibold transition border border-gray-200 dark:border-white/10 flex items-center justify-center gap-2"
+              class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-semibold transition border border-black/10 dark:border-white/10 flex items-center justify-center gap-2"
             >
               <i class="fa-solid fa-rotate"></i> Refresh
             </button>
           </div>
 
-          <div
-            class="glass-panel rounded-3xl overflow-hidden shadow-apple-dark dark:shadow-apple-dark"
-          >
-            <div class="overflow-x-auto">
+          <div class="glass-panel rounded-3xl overflow-hidden">
+            <div class="overflow-x-auto pb-4 sm:pb-0">
               <table class="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr
-                    class="bg-gray-50/50 dark:bg-black/20 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/5"
+                    class="bg-black/5 dark:bg-white/5 text-xs uppercase tracking-wider text-gray-500 border-b border-black/5 dark:border-white/5"
                   >
-                    <th class="py-4 px-4 text-center w-12 font-semibold">
+                    <th
+                      class="py-4 px-2 sm:px-4 text-center w-10 sm:w-12 font-semibold"
+                    >
                       Pos
                     </th>
-                    <th class="py-4 px-4 font-semibold">Class</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">P</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">W</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">D</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">L</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">GF</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">GA</th>
-                    <th class="py-4 px-3 text-center w-12 font-semibold">GD</th>
+                    <th class="py-4 px-2 sm:px-4 font-semibold">Team</th>
                     <th
-                      class="py-4 px-4 text-center w-16 font-bold text-maarifAccent"
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold"
+                    >
+                      P
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      W
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      D
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      L
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      GF
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      GA
+                    </th>
+                    <th
+                      class="py-4 px-1 sm:px-3 text-center w-8 sm:w-12 font-semibold hidden sm:table-cell"
+                    >
+                      GD
+                    </th>
+                    <th
+                      class="py-4 px-2 sm:px-4 text-center w-12 sm:w-16 font-bold text-maarifAccent"
                     >
                       PTS
                     </th>
@@ -477,7 +537,7 @@
                 </thead>
                 <tbody
                   id="leagueTableBody"
-                  class="divide-y divide-gray-100 dark:divide-white/5"
+                  class="divide-y divide-black/5 dark:divide-white/5"
                 ></tbody>
               </table>
             </div>
@@ -485,7 +545,7 @@
         </section>
 
         <!-- NEWS TAB -->
-        <section id="tab-news" class="space-y-6 hidden">
+        <section id="tab-news" class="space-y-6 hidden tab-content">
           <div
             class="card-bg p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           >
@@ -496,16 +556,14 @@
                 <i class="fa-solid fa-newspaper text-maarifAccent"></i> News &
                 Updates
               </h2>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-              >
-                Tournament news, match reports and the live injury report.
+              <p class="text-sm text-gray-500 mt-2 font-medium">
+                Match reports and live injury updates.
               </p>
             </div>
             <div id="newsAdminControls" class="hidden flex w-full sm:w-auto">
               <button
                 id="btnOpenNewsModal"
-                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-black text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
               >
                 <i class="fa-solid fa-plus"></i> Post News
               </button>
@@ -542,7 +600,7 @@
         </section>
 
         <!-- FIXTURES TAB -->
-        <section id="tab-fixtures" class="space-y-6 hidden">
+        <section id="tab-fixtures" class="space-y-6 hidden tab-content">
           <div
             class="card-bg p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           >
@@ -553,11 +611,6 @@
                 <i class="fa-solid fa-calendar-days text-maarifAccent"></i>
                 Match Schedule
               </h2>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-              >
-                Manual fixture management across weeks.
-              </p>
             </div>
             <div
               id="fixtureAdminControls"
@@ -565,7 +618,7 @@
             >
               <button
                 id="btnOpenAddWeekModal"
-                class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
+                class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-black text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
               >
                 <i class="fa-solid fa-plus"></i> Add Week
               </button>
@@ -581,7 +634,7 @@
         </section>
 
         <!-- TEAMS TAB -->
-        <section id="tab-classes" class="space-y-6 hidden">
+        <section id="tab-classes" class="space-y-6 hidden tab-content">
           <div
             class="card-bg p-6 sm:p-8 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
           >
@@ -592,16 +645,11 @@
                 <i class="fa-solid fa-school text-maarifAccent"></i> Class
                 Rosters
               </h2>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-              >
-                Registered class teams and player squads.
-              </p>
             </div>
             <div id="classAdminControls" class="hidden w-full sm:w-auto">
               <button
                 id="btnOpenAddClassModal"
-                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-black text-xs font-bold transition flex items-center justify-center gap-2 shadow-md shadow-maarifAccent/20"
               >
                 <i class="fa-solid fa-plus"></i> Add Class Team
               </button>
@@ -612,7 +660,7 @@
               type="text"
               id="classSearchInput"
               placeholder="Search class (e.g. 9A)..."
-              class="w-full sm:max-w-sm px-5 py-3 rounded-2xl bg-white dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full sm:max-w-sm px-5 py-3 rounded-2xl bg-white dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
             />
           </div>
           <div
@@ -622,7 +670,7 @@
         </section>
 
         <!-- SCORERS TAB -->
-        <section id="tab-scorers" class="space-y-6 hidden">
+        <section id="tab-scorers" class="space-y-6 hidden tab-content">
           <div class="card-bg p-6 sm:p-8 rounded-3xl">
             <h2
               class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3"
@@ -630,24 +678,21 @@
               <i class="fa-solid fa-person-running text-maarifAccent"></i> Top
               Scorers
             </h2>
-            <p
-              class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-            >
-              Individual player goal statistics.
-            </p>
           </div>
           <div class="glass-panel rounded-3xl overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr
-                    class="bg-gray-50/50 dark:bg-black/20 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/5"
+                    class="bg-black/5 dark:bg-white/5 text-xs uppercase tracking-wider text-gray-500 border-b border-black/5 dark:border-white/5"
                   >
                     <th class="py-4 px-4 text-center w-16 font-semibold">
                       Rank
                     </th>
                     <th class="py-4 px-4 font-semibold">Player</th>
-                    <th class="py-4 px-4 font-semibold">Class</th>
+                    <th class="py-4 px-4 font-semibold hidden sm:table-cell">
+                      Class
+                    </th>
                     <th
                       class="py-4 px-4 text-center w-20 text-maarifAccent font-bold"
                     >
@@ -660,7 +705,7 @@
                 </thead>
                 <tbody
                   id="scorersTableBody"
-                  class="divide-y divide-gray-100 dark:divide-white/5"
+                  class="divide-y divide-black/5 dark:divide-white/5"
                 ></tbody>
               </table>
             </div>
@@ -668,7 +713,7 @@
         </section>
 
         <!-- ASSISTS TAB -->
-        <section id="tab-assists" class="space-y-6 hidden">
+        <section id="tab-assists" class="space-y-6 hidden tab-content">
           <div class="card-bg p-6 sm:p-8 rounded-3xl">
             <h2
               class="text-2xl sm:text-3xl font-bold tracking-tight flex items-center gap-3"
@@ -676,24 +721,21 @@
               <i class="fa-solid fa-hands-helping text-maarifAccent"></i> Assist
               Leaders
             </h2>
-            <p
-              class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-            >
-              Top playmaker assist statistics.
-            </p>
           </div>
           <div class="glass-panel rounded-3xl overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full text-left border-collapse text-sm">
                 <thead>
                   <tr
-                    class="bg-gray-50/50 dark:bg-black/20 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-white/5"
+                    class="bg-black/5 dark:bg-white/5 text-xs uppercase tracking-wider text-gray-500 border-b border-black/5 dark:border-white/5"
                   >
                     <th class="py-4 px-4 text-center w-16 font-semibold">
                       Rank
                     </th>
                     <th class="py-4 px-4 font-semibold">Player</th>
-                    <th class="py-4 px-4 font-semibold">Class</th>
+                    <th class="py-4 px-4 font-semibold hidden sm:table-cell">
+                      Class
+                    </th>
                     <th
                       class="py-4 px-4 text-center w-20 text-maarifAccent font-bold"
                     >
@@ -706,7 +748,7 @@
                 </thead>
                 <tbody
                   id="assistsTableBody"
-                  class="divide-y divide-gray-100 dark:divide-white/5"
+                  class="divide-y divide-black/5 dark:divide-white/5"
                 ></tbody>
               </table>
             </div>
@@ -714,7 +756,7 @@
         </section>
 
         <!-- ADMIN TAB -->
-        <section id="tab-admin" class="space-y-6 hidden">
+        <section id="tab-admin" class="space-y-6 hidden tab-content">
           <div
             id="adminLoginPrompt"
             class="glass-panel p-8 rounded-3xl max-w-md mx-auto text-center space-y-6 mt-8"
@@ -728,31 +770,23 @@
               <h3 class="text-xl font-bold tracking-tight">
                 Admin Privileges Required
               </h3>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1.5">
-                Sign in with Sarxan Hoca's admin credentials.
-              </p>
             </div>
             <form id="formInlineLogin" class="space-y-4 text-left">
               <div>
-                <label
-                  class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+                <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                   >Admin Username</label
                 >
                 <input
                   type="text"
                   id="inlineLoginUsername"
                   autocomplete="username"
-                  autocapitalize="none"
-                  autocorrect="off"
-                  spellcheck="false"
                   required
-                  class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                  class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
                   placeholder="Admin_Sarxan"
                 />
               </div>
               <div>
-                <label
-                  class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+                <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                   >Password</label
                 >
                 <input
@@ -760,13 +794,13 @@
                   id="inlineLoginPassword"
                   autocomplete="current-password"
                   required
-                  class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                  class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
                   placeholder="••••••••"
                 />
               </div>
               <button
                 type="submit"
-                class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+                class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
               >
                 Sign In as Admin
               </button>
@@ -784,11 +818,6 @@
                   <i class="fa-solid fa-user-shield text-maarifAccent"></i>
                   Admin Control Center
                 </h2>
-                <p
-                  class="text-sm text-gray-500 dark:text-gray-400 mt-2 font-medium"
-                >
-                  Logged in as <strong>Admin_Sarxan</strong>.
-                </p>
               </div>
               <button
                 id="btnAdminLogout"
@@ -810,12 +839,12 @@
                     id="btnAdminSaveCloud"
                     class="w-full py-3 px-4 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-xs font-bold transition text-left flex items-center justify-between text-emerald-500 border border-emerald-500/20"
                   >
-                    <span>Save All Changes to Cloud</span>
+                    <span>Save Changes</span>
                     <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
                   </button>
                   <button
                     id="btnAdminAddClass"
-                    class="w-full py-3 px-4 rounded-xl bg-gray-50 dark:bg-white/5 hover:bg-gray-100 dark:hover:bg-white/10 text-xs font-semibold transition text-left flex items-center justify-between border border-gray-200 dark:border-white/10"
+                    class="w-full py-3 px-4 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-semibold transition text-left flex items-center justify-between border border-black/10 dark:border-white/10"
                   >
                     <span>Add Class Team</span>
                     <i class="fa-solid fa-plus text-maarifAccent"></i>
@@ -824,14 +853,14 @@
                     id="btnExportHtml"
                     class="w-full py-3 px-4 rounded-xl bg-maarifAccent/10 hover:bg-maarifAccent/20 text-xs font-semibold transition text-left flex items-center justify-between text-maarifAccent border border-maarifAccent/20"
                   >
-                    <span>Export Live Code (index.html)</span>
+                    <span>Export Live Code</span>
                     <i class="fa-solid fa-file-code"></i>
                   </button>
                   <button
                     id="btnAdminResetAll"
                     class="w-full py-3 px-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-xs font-semibold transition text-left flex items-center justify-between text-red-500 border border-red-500/20"
                   >
-                    <span>Reset All Tournament Data</span>
+                    <span>Reset All Data</span>
                     <i class="fa-solid fa-triangle-exclamation"></i>
                   </button>
                 </div>
@@ -845,22 +874,20 @@
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                   <div
-                    class="bg-gray-50 dark:bg-black/20 p-5 rounded-2xl border border-gray-200 dark:border-white/5"
+                    class="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/5"
                   >
-                    <span
-                      class="text-xs text-gray-500 dark:text-gray-400 font-medium block mb-1"
-                      >Total Registered Classes</span
+                    <span class="text-xs text-gray-500 font-medium block mb-1"
+                      >Total Classes</span
                     >
                     <span class="font-bold text-2xl" id="adminClassCount"
                       >0</span
                     >
                   </div>
                   <div
-                    class="bg-gray-50 dark:bg-black/20 p-5 rounded-2xl border border-gray-200 dark:border-white/5"
+                    class="bg-black/5 dark:bg-white/5 p-5 rounded-2xl border border-black/5 dark:border-white/5"
                   >
-                    <span
-                      class="text-xs text-gray-500 dark:text-gray-400 font-medium block mb-1"
-                      >Total Matches Scheduled</span
+                    <span class="text-xs text-gray-500 font-medium block mb-1"
+                      >Total Matches</span
                     >
                     <span class="font-bold text-2xl" id="adminMatchCount"
                       >0</span
@@ -874,27 +901,78 @@
       </main>
 
       <footer
-        class="mt-auto py-6 border-t border-gray-200 dark:border-white/10 text-center text-xs text-gray-500 font-medium px-4 space-y-1"
+        class="py-6 border-t border-black/10 dark:border-white/10 text-center text-xs text-gray-500 font-medium px-4 space-y-1 relative z-10"
       >
         <div>
           Maarif Schools Cup Baku 2026 &copy; Premier League. Admin: Sarxan
           Hoca.
         </div>
-        <div class="text-emerald-500">
-          <i class="fa-solid fa-cloud-arrow-up mr-1.5"></i> Real-Time Cloud Sync
-          Enabled
-        </div>
       </footer>
     </div>
 
+    <!-- MOBILE FLOATING BOTTOM DOCK -->
+    <nav
+      class="fixed bottom-4 left-4 right-4 z-40 lg:hidden mobile-dock rounded-3xl px-2 py-3 flex justify-between items-center shadow-2xl"
+    >
+      <button
+        id="mobTabBtn-league"
+        class="flex flex-col items-center gap-1 flex-1 text-maarifAccent"
+      >
+        <i class="fa-solid fa-table-list text-lg"></i>
+        <span class="text-[9px] font-bold">Table</span>
+      </button>
+      <button
+        id="mobTabBtn-news"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-newspaper text-lg"></i>
+        <span class="text-[9px] font-bold">News</span>
+      </button>
+      <button
+        id="mobTabBtn-fixtures"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-calendar-days text-lg"></i>
+        <span class="text-[9px] font-bold">Fixtures</span>
+      </button>
+      <button
+        id="mobTabBtn-classes"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-school text-lg"></i>
+        <span class="text-[9px] font-bold">Teams</span>
+      </button>
+      <button
+        id="mobTabBtn-scorers"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-person-running text-lg"></i>
+        <span class="text-[9px] font-bold">Scorers</span>
+      </button>
+      <button
+        id="mobTabBtn-assists"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-hands-helping text-lg"></i>
+        <span class="text-[9px] font-bold">Assists</span>
+      </button>
+      <button
+        id="mobTabBtn-admin"
+        class="flex flex-col items-center gap-1 flex-1 text-gray-500"
+      >
+        <i class="fa-solid fa-user-gear text-lg"></i>
+        <span class="text-[9px] font-bold">Admin</span>
+      </button>
+    </nav>
+
     <!-- MODALS -->
-    <!-- Custom Confirmation Modal (Replaces ugly window.confirm) -->
+    <!-- Custom Confirmation Modal -->
     <div
       id="customConfirmModal"
       class="fixed inset-0 z-[100] bg-black/60 backdrop-blur-md hidden items-center justify-center p-4 transition-opacity duration-200"
     >
       <div
-        class="glass-panel p-6 sm:p-8 rounded-3xl max-w-sm w-full space-y-6 border shadow-2xl transform scale-100 transition-transform"
+        class="glass-panel p-6 sm:p-8 rounded-3xl max-w-sm w-full space-y-6 border border-white/10 shadow-2xl transform scale-100 transition-transform"
       >
         <div class="text-center">
           <div
@@ -903,17 +981,14 @@
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Are you sure?</h3>
-          <p
-            id="customConfirmMessage"
-            class="text-sm text-gray-500 dark:text-gray-400 mt-2"
-          >
+          <p id="customConfirmMessage" class="text-sm text-gray-500 mt-2">
             This action cannot be undone.
           </p>
         </div>
         <div class="flex gap-3">
           <button
             id="btnConfirmCancel"
-            class="flex-1 py-3 rounded-xl bg-gray-100 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-sm font-bold transition"
+            class="flex-1 py-3 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-sm font-bold transition"
           >
             Cancel
           </button>
@@ -932,11 +1007,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseLoginModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -947,45 +1022,35 @@
             <i class="fa-solid fa-user-lock"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Admin Authentication</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Admin credentials required.
-          </p>
         </div>
         <form id="formModalLogin" class="space-y-4">
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Username</label
             >
             <input
               type="text"
               id="modalLoginUsername"
-              autocomplete="username"
-              autocapitalize="none"
-              autocorrect="off"
-              spellcheck="false"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="Admin_Sarxan"
             />
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Password</label
             >
             <input
               type="password"
               id="modalLoginPassword"
-              autocomplete="current-password"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="••••••••"
             />
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Sign In
           </button>
@@ -998,11 +1063,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseAddClassModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1013,39 +1078,34 @@
             <i class="fa-solid fa-school"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Add Class Team</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Register class team (e.g. 9A)
-          </p>
         </div>
         <form id="formAddClass" class="space-y-4">
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Class Name</label
             >
             <input
               type="text"
               id="classNameInput"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="e.g. 9A Class"
             />
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Theme Color</label
             >
             <input
               type="color"
               id="classColorInput"
-              value="#00b5e2"
-              class="w-full h-12 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 p-1 cursor-pointer"
+              value="#a3e635"
+              class="w-full h-12 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 p-1 cursor-pointer"
             />
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Register Class
           </button>
@@ -1058,11 +1118,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseAddPlayerModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1073,31 +1133,26 @@
             <i class="fa-solid fa-user-plus"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Add Player</h3>
-          <p
-            class="text-sm text-gray-500 dark:text-gray-400 mt-1"
-            id="addPlayerModalTeamName"
-          >
+          <p class="text-sm text-gray-500 mt-1" id="addPlayerModalTeamName">
             Class Team
           </p>
         </div>
         <form id="formAddPlayer" class="space-y-4">
           <input type="hidden" id="playerTeamId" />
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
-              >Player Full Name</label
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
+              >Player Name</label
             >
             <input
               type="text"
               id="playerNameInput"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="e.g. Elchin Mammadov"
             />
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Jersey Number</label
             >
             <input
@@ -1107,12 +1162,12 @@
               max="99"
               value="10"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
             />
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Add Player
           </button>
@@ -1125,11 +1180,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseAddMatchModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1142,40 +1197,34 @@
           <h3 class="text-lg font-bold tracking-tight" id="addMatchModalTitle">
             Add Match
           </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Select home and away class teams
-          </p>
         </div>
         <form id="formAddMatch" class="space-y-4">
           <input type="hidden" id="matchWeekId" />
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label
-                class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+              <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                 >Home Team</label
               >
               <select
                 id="matchHomeTeam"
                 required
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition dark:text-white text-gray-800"
+                class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition dark:text-white text-gray-800"
               ></select>
             </div>
             <div>
-              <label
-                class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+              <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                 >Away Team</label
               >
               <select
                 id="matchAwayTeam"
                 required
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition dark:text-white text-gray-800"
+                class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition dark:text-white text-gray-800"
               ></select>
             </div>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label
-                class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+              <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                 >Home Goals</label
               >
               <input
@@ -1185,12 +1234,11 @@
                 max="30"
                 value=""
                 placeholder="-"
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               />
             </div>
             <div>
-              <label
-                class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+              <label class="block text-xs font-semibold text-gray-500 mb-1.5"
                 >Away Goals</label
               >
               <input
@@ -1200,13 +1248,13 @@
                 max="30"
                 value=""
                 placeholder="-"
-                class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               />
             </div>
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Save Fixture
           </button>
@@ -1219,11 +1267,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-sm w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseAddWeekModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1234,27 +1282,23 @@
             <i class="fa-solid fa-calendar-plus"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Add Tournament Week</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Create week (e.g. Week 1)
-          </p>
         </div>
         <form id="formAddWeek" class="space-y-4">
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Week Title</label
             >
             <input
               type="text"
               id="weekTitleInput"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="e.g. Week 1"
             />
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Create Week
           </button>
@@ -1267,11 +1311,11 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseEditMatchModal"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1282,15 +1326,12 @@
             <i class="fa-solid fa-pen-to-square"></i>
           </div>
           <h3 class="text-lg font-bold tracking-tight">Enter Match Score</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Record match result & player stats
-          </p>
         </div>
         <form id="formEditMatch" class="space-y-5">
           <input type="hidden" id="editMatchWeekId" />
           <input type="hidden" id="editMatchId" />
           <div
-            class="flex items-center justify-between gap-4 bg-gray-50 dark:bg-black/20 p-4 rounded-2xl border border-gray-200 dark:border-white/5"
+            class="flex items-center justify-between gap-4 bg-black/5 dark:bg-white/5 p-4 rounded-2xl border border-black/5 dark:border-white/5"
           >
             <div class="text-center flex-1">
               <span
@@ -1304,7 +1345,7 @@
                 min="0"
                 max="30"
                 required
-                class="w-16 mx-auto text-center py-2 rounded-xl bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 text-xl font-black focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                class="w-16 mx-auto text-center py-2 rounded-xl bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 text-xl font-black focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               />
             </div>
             <span class="text-lg font-bold text-gray-400">VS</span>
@@ -1320,7 +1361,7 @@
                 min="0"
                 max="30"
                 required
-                class="w-16 mx-auto text-center py-2 rounded-xl bg-white dark:bg-black/50 border border-gray-200 dark:border-white/10 text-xl font-black focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+                class="w-16 mx-auto text-center py-2 rounded-xl bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 text-xl font-black focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               />
             </div>
           </div>
@@ -1337,7 +1378,7 @@
           </div>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Save Match Result
           </button>
@@ -1350,13 +1391,13 @@
       class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md hidden items-center justify-center p-4"
     >
       <div
-        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border relative"
+        class="glass-panel p-8 rounded-3xl max-w-md w-full space-y-6 border border-white/10 relative"
       >
         <button
           id="btnCloseNewsModal"
           type="button"
           aria-label="Close"
-          class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 dark:hover:text-white transition"
+          class="absolute top-5 right-5 text-gray-400 hover:text-white transition"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
         </button>
@@ -1369,15 +1410,11 @@
           <h3 class="text-lg font-bold tracking-tight" id="newsModalTitle">
             Post News
           </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Visible to everyone on the News tab
-          </p>
         </div>
         <form id="formNews" class="space-y-4">
           <input type="hidden" id="newsIdInput" />
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Title</label
             >
             <input
@@ -1385,18 +1422,17 @@
               id="newsTitleInput"
               maxlength="120"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition"
               placeholder="e.g. 9A beat 10B 3-1"
             />
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Category</label
             >
             <select
               id="newsCategoryInput"
-              class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition dark:text-white text-gray-800"
+              class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition dark:text-white text-gray-800"
             >
               <option value="news">News</option>
               <option value="match">Match Report</option>
@@ -1405,8 +1441,7 @@
             </select>
           </div>
           <div>
-            <label
-              class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1.5"
+            <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Text</label
             >
             <textarea
@@ -1414,12 +1449,12 @@
               rows="5"
               maxlength="2000"
               required
-              class="w-full px-5 py-3 rounded-xl bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent/50 transition resize-y"
+              class="w-full px-5 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition resize-y"
               placeholder="Write the update here..."
             ></textarea>
           </div>
           <label
-            class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 cursor-pointer"
+            class="flex items-center gap-2 text-sm font-semibold text-gray-500 cursor-pointer"
           >
             <input
               type="checkbox"
@@ -1430,14 +1465,13 @@
           </label>
           <button
             type="submit"
-            class="w-full py-3.5 rounded-xl bg-maarifAccent hover:bg-maarifAccentHover text-maarifBg font-bold text-sm transition shadow-md shadow-maarifAccent/20"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20"
           >
             Save
           </button>
         </form>
       </div>
     </div>
-
     <script type="module" src="app.js"></script>
   </body>
 </html>
