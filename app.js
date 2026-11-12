@@ -3,7 +3,9 @@
    To enable shared cloud sync, paste your Firebase web config below. */
 
 const FIREBASE_CONFIG = null; // e.g. { apiKey:"...", authDomain:"...", projectId:"...", appId:"..." }
-const ADMIN_EMAIL_DOMAIN = "maarif.app"; // Firebase login: "Admin_Sarxan" -> admin_sarxan@maarif.app (or type a full email)
+const APP_ID = ""; // <-- the {appId} in artifacts/{appId}/public_data/tournament_state (see Firestore Data tab)
+const ADMIN_EMAIL = "rasulasadovruslan@gmail.com"; // the only account your Firestore rules allow to write
+const ADMIN_ALIAS = "admin_sarxan"; // typing this username logs in as ADMIN_EMAIL
 const LOCAL_ADMIN = { user: "admin_sarxan", pass: "admin123" }; // local mode only – CHANGE THIS
 
 const $ = (id) => document.getElementById(id);
@@ -12,7 +14,7 @@ const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(3
 const LS = "maarif_state_v1";
 
 let state = { classes: [], weeks: [], news: [] };
-let isAdmin = false, cloud = null, confirmRes = null, classFilter = "";
+let isAdmin = false, cloud = null, cloudBlocked = false, confirmRes = null, classFilter = "";
 
 const normalize = (s) => ({
   classes: (s?.classes || []).map((c) => ({ ...c, players: c.players || [] })),
@@ -49,7 +51,7 @@ const adminOnly = (html) => (isAdmin ? html : "");
 
 function persist() {
   try { localStorage.setItem(LS, JSON.stringify(state)); } catch {}
-  if (cloud && isAdmin) {
+  if (cloud && isAdmin && !cloudBlocked) {
     cloud.setDoc(cloud.ref, JSON.parse(JSON.stringify(state))).catch((e) => { console.error(e); toast("Cloud save failed (check Firestore rules)", "error"); });
   }
 }
@@ -221,7 +223,7 @@ async function login(user, pass) {
   user = user.trim();
   try {
     if (cloud) {
-      const email = user.includes("@") ? user : `${user.toLowerCase()}@${ADMIN_EMAIL_DOMAIN}`;
+      const email = user.includes("@") ? user : user.toLowerCase() === ADMIN_ALIAS ? ADMIN_EMAIL : user;
       await cloud.signIn(cloud.auth, email, pass); // onAuthStateChanged flips admin on
     } else if (user.toLowerCase() === LOCAL_ADMIN.user && pass === LOCAL_ADMIN.pass) {
       setAdmin(true);
@@ -236,13 +238,21 @@ async function logout() { if (cloud) await cloud.signOut(cloud.auth); else setAd
 
 /* ---------- cloud (optional) ---------- */
 async function initCloud() {
-  if (!FIREBASE_CONFIG) return;
+  if (!FIREBASE_CONFIG || !APP_ID) return console.warn("Set FIREBASE_CONFIG and APP_ID in app.js to enable cloud");
   try {
     const b = "https://www.gstatic.com/firebasejs/10.12.2/";
     const [A, Au, F] = await Promise.all([import(b + "firebase-app.js"), import(b + "firebase-auth.js"), import(b + "firebase-firestore.js")]);
-    const app = A.initializeApp(FIREBASE_CONFIG), auth = Au.getAuth(app), ref = F.doc(F.getFirestore(app), "maarif", "state");
+    const app = A.initializeApp(FIREBASE_CONFIG), auth = Au.getAuth(app), ref = F.doc(F.getFirestore(app), "artifacts", APP_ID, "public_data", "tournament_state");
     cloud = { auth, ref, setDoc: F.setDoc, signIn: Au.signInWithEmailAndPassword, signOut: Au.signOut };
-    F.onSnapshot(ref, (s) => { if (s.exists()) { state = normalize(s.data()); renderAll(); } else if (isAdmin) persist(); },
+    F.onSnapshot(ref, (s) => {
+      if (!s.exists()) { if (isAdmin) persist(); return; }
+      const d = s.data();
+      if (!Array.isArray(d.classes)) { // unknown old format: never overwrite it
+        cloudBlocked = true; console.warn("Firestore doc has a different shape:", d);
+        toast("Old data format detected – saving to cloud is paused", "error"); return;
+      }
+      cloudBlocked = false; state = normalize(d); renderAll();
+    },
       () => toast("Cloud read blocked (check Firestore rules)", "error"));
     Au.onAuthStateChanged(auth, (u) => setAdmin(!!u));
   } catch (e) { console.error(e); toast("Cloud unavailable – using local data", "error"); }
