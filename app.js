@@ -633,7 +633,7 @@ function bind() {
     ["btnCloseEditMatchModal", "editMatchModal"],
     ["btnCloseNewsModal", "newsModal"],
   ].forEach(([b, m]) => ($(b).onclick = () => closeM(m)));
-  document.querySelectorAll('[id$="Modal"]').forEach((m) =>
+  document.querySelectorAll('div[id$="Modal"]').forEach((m) =>
     m.addEventListener("mousedown", (e) => {
       if (e.target === m) closeM(m.id);
     }),
@@ -641,7 +641,7 @@ function bind() {
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape")
       document
-        .querySelectorAll('[id$="Modal"]:not(.hidden)')
+        .querySelectorAll('div[id$="Modal"]:not(.hidden)')
         .forEach((m) => closeM(m.id));
   });
 
