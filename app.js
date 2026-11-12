@@ -35,10 +35,62 @@ let isAdmin = false,
   confirmRes = null,
   classFilter = "";
 
+/* Accepts BOTH the internal format and the Firestore format
+   (homeTeamId / awayTeamId / homeScore / awayScore / createdAt). */
+const normMatch = (m) => {
+  const home = m.home ?? m.homeTeamId,
+    away = m.away ?? m.awayTeamId;
+  const hs = m.hs ?? m.homeScore,
+    as = m.as ?? m.awayScore;
+  const played =
+    typeof m.played === "boolean"
+      ? m.played
+      : typeof hs === "number" && typeof as === "number";
+  const { homeTeamId, awayTeamId, homeScore, awayScore, ...rest } = m;
+  return {
+    ...rest,
+    home,
+    away,
+    hs: played ? +hs : 0,
+    as: played ? +as : 0,
+    played,
+    stats: m.stats || {},
+  };
+};
+const normNews = (n) => {
+  const ts =
+    typeof n.ts === "number" ? n.ts : Date.parse(n.createdAt) || Date.now();
+  const { createdAt, ...rest } = n;
+  return { ...rest, ts, pinned: !!n.pinned };
+};
 const normalize = (s) => ({
   classes: (s?.classes || []).map((c) => ({ ...c, players: c.players || [] })),
-  weeks: (s?.weeks || []).map((w) => ({ ...w, matches: w.matches || [] })),
-  news: s?.news || [],
+  weeks: (s?.weeks || []).map((w) => ({
+    ...w,
+    matches: (w.matches || []).map(normMatch),
+  })),
+  news: (s?.news || []).map(normNews),
+});
+/* Converts back to the shape stored in Firestore so your database keeps its format. */
+const toCloud = (st) => ({
+  classes: st.classes,
+  weeks: st.weeks.map((w) => ({
+    ...w,
+    matches: w.matches.map((m) => {
+      const { home, away, hs, as, played, ...rest } = m;
+      return {
+        ...rest,
+        homeTeamId: home,
+        awayTeamId: away,
+        homeScore: played ? hs : null,
+        awayScore: played ? as : null,
+      };
+    }),
+  })),
+  news: st.news.map((n) => {
+    const { ts, ...rest } = n;
+    return { ...rest, createdAt: new Date(ts).toISOString() };
+  }),
 });
 try {
   state = normalize(JSON.parse(localStorage.getItem(LS)));
@@ -87,10 +139,12 @@ function persist() {
     localStorage.setItem(LS, JSON.stringify(state));
   } catch {}
   if (cloud && isAdmin && !cloudBlocked) {
-    cloud.setDoc(cloud.ref, JSON.parse(JSON.stringify(state))).catch((e) => {
-      console.error(e);
-      toast("Cloud save failed (check Firestore rules)", "error");
-    });
+    cloud
+      .setDoc(cloud.ref, JSON.parse(JSON.stringify(toCloud(state))))
+      .catch((e) => {
+        console.error(e);
+        toast("Cloud save failed (check Firestore rules)", "error");
+      });
   }
 }
 function commit(msg) {
