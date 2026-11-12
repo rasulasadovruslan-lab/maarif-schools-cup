@@ -771,7 +771,37 @@
                 Admin Privileges Required
               </h3>
             </div>
-            <button type="button" id="btnGoogleInline" class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20 flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Sign in with Google</button><p class="text-[11px] text-gray-500 text-center">Admin account only. Everyone else can browse as a guest.</p>
+            <form
+              id="formInlineLogin"
+              class="space-y-3 text-left"
+              autocomplete="on"
+            >
+              <input
+                id="inlineLoginUsername"
+                type="text"
+                autocomplete="username"
+                required
+                placeholder="Username or email"
+                class="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-maarifAccent"
+              />
+              <input
+                id="inlineLoginPassword"
+                type="password"
+                autocomplete="current-password"
+                required
+                placeholder="Password"
+                class="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-maarifAccent"
+              />
+              <button
+                type="submit"
+                class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20 flex items-center justify-center gap-2"
+              >
+                <i class="fa-solid fa-right-to-bracket"></i> Login
+              </button>
+              <p class="text-[11px] text-gray-500 text-center">
+                Admin account only. Everyone else can browse as a guest.
+              </p>
+            </form>
           </div>
 
           <div id="adminDashboardContent" class="hidden space-y-6">
@@ -990,7 +1020,33 @@
           </div>
           <h3 class="text-lg font-bold tracking-tight">Admin Authentication</h3>
         </div>
-        <button type="button" id="btnGoogleModal" class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20 flex items-center justify-center gap-3"><i class="fa-brands fa-google"></i> Sign in with Google</button><p class="text-[11px] text-gray-500 text-center">Admin account only. Everyone else can browse as a guest.</p>
+        <form id="formModalLogin" class="space-y-3 text-left" autocomplete="on">
+          <input
+            id="modalLoginUsername"
+            type="text"
+            autocomplete="username"
+            required
+            placeholder="Username or email"
+            class="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-maarifAccent"
+          />
+          <input
+            id="modalLoginPassword"
+            type="password"
+            autocomplete="current-password"
+            required
+            placeholder="Password"
+            class="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-maarifAccent"
+          />
+          <button
+            type="submit"
+            class="w-full py-3.5 rounded-xl bg-maarifAccent text-black font-bold text-sm transition shadow-md shadow-maarifAccent/20 flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-right-to-bracket"></i> Login
+          </button>
+          <p class="text-[11px] text-gray-500 text-center">
+            Admin account only. Everyone else can browse as a guest.
+          </p>
+        </form>
       </div>
     </div>
 
