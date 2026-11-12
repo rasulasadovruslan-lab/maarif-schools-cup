@@ -5,6 +5,7 @@
 const FIREBASE_CONFIG = null; // e.g. { apiKey:"...", authDomain:"...", projectId:"...", appId:"..." }
 const APP_ID = ""; // <-- the {appId} in artifacts/{appId}/public_data/tournament_state (see Firestore Data tab)
 const ADMIN_EMAIL = "rasulasadovruslan@gmail.com"; // the only account your Firestore rules allow to write
+const ADMIN_ALIAS = "admin_sarxan"; // typing this username signs in as ADMIN_EMAIL (or just type the full email)
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) =>
@@ -376,29 +377,32 @@ function setAdmin(v) {
   $("btnAuthAction").textContent = v ? "Logout" : "Admin Login";
   renderAll();
 }
-async function googleLogin() {
-  if (!cloud)
-    return toast(
-      "Cloud not configured yet (FIREBASE_CONFIG / APP_ID)",
-      "error",
-    );
+async function login(user, pass) {
+  if (!cloud) {
+    toast("Cloud not configured yet (FIREBASE_CONFIG / APP_ID)", "error");
+    return false;
+  }
+  user = user.trim();
+  const email = user.includes("@")
+    ? user
+    : user.toLowerCase() === ADMIN_ALIAS
+      ? ADMIN_EMAIL
+      : user;
   try {
-    const r = await cloud.signIn(cloud.auth, new cloud.Provider());
+    const r = await cloud.signIn(cloud.auth, email, pass);
     if (r.user.email !== ADMIN_EMAIL) {
       await cloud.signOut(cloud.auth);
-      return toast("This Google account is not the admin", "error");
+      toast("This account is not the admin", "error");
+      return false;
     }
     closeM("loginModal");
     toast("Signed in as admin");
     showTab("admin");
+    return true;
   } catch (e) {
-    if (
-      e.code !== "auth/popup-closed-by-user" &&
-      e.code !== "auth/cancelled-popup-request"
-    ) {
-      console.error(e);
-      toast("Google sign-in failed: " + (e.code || e.message), "error");
-    }
+    console.error(e);
+    toast("Wrong username or password", "error");
+    return false;
   }
 }
 async function logout() {
@@ -433,8 +437,7 @@ async function initCloud() {
       auth,
       ref,
       setDoc: F.setDoc,
-      Provider: Au.GoogleAuthProvider,
-      signIn: Au.signInWithPopup,
+      signIn: Au.signInWithEmailAndPassword,
       signOut: Au.signOut,
     };
     F.onSnapshot(
@@ -462,7 +465,7 @@ async function initCloud() {
       () => toast("Cloud read blocked (check Firestore rules)", "error"),
     );
     Au.onAuthStateChanged(auth, (u) => {
-      if (u && u.email === ADMIN_EMAIL && u.emailVerified) setAdmin(true);
+      if (u && u.email === ADMIN_EMAIL) setAdmin(true);
       else {
         setAdmin(false);
         if (u) Au.signOut(auth);
@@ -586,8 +589,18 @@ function bind() {
   $("btnAuthAction").onclick = () => (isAdmin ? logout() : openM("loginModal"));
   $("btnAuthActionMob").onclick = () => showTab("admin");
   $("btnCloseLoginModal").onclick = () => closeM("loginModal");
-  $("btnGoogleInline").onclick = googleLogin;
-  $("btnGoogleModal").onclick = googleLogin;
+  $("formInlineLogin").onsubmit = (e) => {
+    e.preventDefault();
+    login($("inlineLoginUsername").value, $("inlineLoginPassword").value).then(
+      (ok) => ok && e.target.reset(),
+    );
+  };
+  $("formModalLogin").onsubmit = (e) => {
+    e.preventDefault();
+    login($("modalLoginUsername").value, $("modalLoginPassword").value).then(
+      (ok) => ok && e.target.reset(),
+    );
+  };
   $("btnAdminLogout").onclick = logout;
 
   // confirm
