@@ -266,14 +266,29 @@ function renderNews() {
         )
         .join("")
     : empty("No news yet.");
-  const inj = list.filter((n) => n.category === "injury");
-  $("injuryCount").textContent = inj.length;
-  $("injuryReportList").innerHTML = inj.length
-    ? inj
+  const hurt = state.classes
+    .map((c) => ({
+      c,
+      ps: c.players
+        .filter((p) => p.injured)
+        .sort((x, y) => x.number - y.number),
+    }))
+    .filter((x) => x.ps.length);
+  const total = hurt.reduce((n, x) => n + x.ps.length, 0);
+  $("injuryCount").textContent = total;
+  $("injuryReportList").innerHTML = total
+    ? hurt
         .map(
-          (n) => `
-    <div class="p-3 rounded-xl bg-red-500/5 border border-red-500/10"><div class="text-sm font-bold">${esc(n.title)}</div>
-    <div class="text-xs text-gray-500 mt-1">${esc(n.body.slice(0, 100))}${n.body.length > 100 ? "…" : ""}</div></div>`,
+          ({ c, ps }) => `
+    <div class="p-3 rounded-xl bg-red-500/5 border border-red-500/10 space-y-2">
+      <div class="flex items-center gap-2 text-xs font-bold">${badge(c)}<span class="truncate">${esc(c.name)}</span><span class="ml-auto shrink-0 text-red-500">${ps.length} out</span></div>
+      ${ps
+        .map(
+          (p) =>
+            `<div class="flex items-center gap-3 text-sm"><span class="w-7 text-center font-black text-red-500">${p.number}</span><span class="truncate">${esc(p.name)}</span></div>`,
+        )
+        .join("")}
+    </div>`,
         )
         .join("")
     : '<p class="text-xs text-gray-500">No injuries reported.</p>';
@@ -326,7 +341,7 @@ function renderClasses() {
           (c) => `
     <div class="glass-panel p-5 rounded-3xl space-y-4">
       <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">${badge(c)}<div class="min-w-0"><h3 class="font-bold truncate">${esc(c.name)}</h3><p class="text-xs text-gray-500">${c.players.length} players</p></div></div>
+        <div class="flex items-center gap-3 min-w-0">${badge(c)}<div class="min-w-0"><h3 class="font-bold truncate">${esc(c.name)}</h3><p class="text-xs text-gray-500">${c.players.length} players${c.players.some((p) => p.injured) ? ` · <span class="text-red-500 font-semibold">${c.players.filter((p) => p.injured).length} injured</span>` : ""}</p></div></div>
         ${adminOnly(`<div class="flex gap-2 text-xs">
           <button data-a="add-player" data-c="${c.id}" class="px-3 py-1.5 rounded-lg bg-maarifAccent text-black font-bold"><i class="fa-solid fa-user-plus"></i></button>
           <button data-a="del-class" data-c="${c.id}" class="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-500"><i class="fa-solid fa-trash-can"></i></button></div>`)}
@@ -337,9 +352,11 @@ function renderClasses() {
             .sort((a, b) => a.number - b.number)
             .map(
               (p) => `
-          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-black/5 dark:bg-white/5 text-sm">
-            <span class="flex items-center gap-3 min-w-0"><span class="w-7 text-center font-black text-maarifAccent">${p.number}</span><span class="truncate">${esc(p.name)}</span></span>
-            ${adminOnly(`<button data-a="del-player" data-c="${c.id}" data-p="${p.id}" class="text-red-500 px-2" title="Remove"><i class="fa-solid fa-xmark"></i></button>`)}
+          <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm border ${p.injured ? "bg-red-500/10 border-red-500/20" : "bg-black/5 dark:bg-white/5 border-transparent"}">
+            <span class="flex items-center gap-3 min-w-0"><span class="w-7 text-center font-black ${p.injured ? "text-red-500" : "text-maarifAccent"}">${p.number}</span><span class="truncate">${esc(p.name)}</span>${p.injured && !isAdmin ? '<span class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20 text-[10px] font-bold"><i class="fa-solid fa-kit-medical"></i> Injured</span>' : ""}</span>
+            ${adminOnly(`<span class="flex items-center gap-1 shrink-0">
+              <button type="button" role="switch" aria-checked="${!!p.injured}" data-a="toggle-injury" data-c="${c.id}" data-p="${p.id}" class="inj-toggle ${p.injured ? "on" : ""}" title="${p.injured ? "Mark as fit" : "Mark as injured"}"><i class="fa-solid fa-kit-medical"></i><span>Injured</span><span class="track"></span></button>
+              <button data-a="del-player" data-c="${c.id}" data-p="${p.id}" class="text-red-500 px-2" title="Remove"><i class="fa-solid fa-xmark"></i></button></span>`)}
           </div>`,
             )
             .join("") || '<p class="text-xs text-gray-500">No players yet.</p>'
@@ -615,12 +632,21 @@ function openEditMatch(wId, mId) {
     .join("");
   openM("editMatchModal");
 }
+function setNewsCat(v) {
+  v = CAT[v] ? v : "news";
+  $("newsCategoryInput").value = v;
+  document.querySelectorAll("#newsCategoryChips [data-cat]").forEach((b) => {
+    const on = b.dataset.cat === v;
+    b.classList.toggle("active", on);
+    b.setAttribute("aria-checked", on);
+  });
+}
 function openNews(id) {
   const n = state.news.find((x) => x.id === id);
   $("newsModalTitle").textContent = n ? "Edit News" : "Post News";
   $("newsIdInput").value = n?.id || "";
   $("newsTitleInput").value = n?.title || "";
-  $("newsCategoryInput").value = n?.category || "news";
+  setNewsCat(n?.category);
   $("newsBodyInput").value = n?.body || "";
   $("newsPinInput").checked = !!n?.pinned;
   openM("newsModal");
@@ -687,6 +713,10 @@ function bind() {
     openM("addWeekModal");
   };
   $("btnOpenNewsModal").onclick = () => openNews("");
+  $("newsCategoryChips").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-cat]");
+    if (b) setNewsCat(b.dataset.cat);
+  });
   [
     ["btnCloseAddClassModal", "addClassModal"],
     ["btnCloseAddPlayerModal", "addPlayerModal"],
@@ -886,6 +916,13 @@ function bind() {
         );
         commit("Class deleted");
       }
+    } else if (a === "toggle-injury") {
+      const pl = team?.players.find((x) => x.id === p);
+      if (!pl) return;
+      pl.injured = !pl.injured;
+      commit(
+        pl.injured ? `${pl.name} marked as injured` : `${pl.name} is fit again`,
+      );
     } else if (a === "edit-news") openNews(n);
     else if (a === "pin-news") {
       const x = state.news.find((v) => v.id === n);

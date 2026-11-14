@@ -356,6 +356,146 @@
         background: #ffffff;
         color: #0f172a;
       }
+
+      /* ---------- dropdowns: readable options in dark mode ---------- */
+      .dark select {
+        color-scheme: dark;
+      }
+      .dark option {
+        background: #111111;
+        color: #ffffff;
+      }
+
+      /* ---------- news category chips ---------- */
+      .cat-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.75rem 0.9rem;
+        border-radius: 0.9rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-align: left;
+        color: #9ca3af;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .cat-chip i {
+        width: 1rem;
+        text-align: center;
+      }
+      .cat-chip:hover {
+        color: #ffffff;
+        border-color: rgba(163, 230, 53, 0.55);
+      }
+      .cat-chip:focus-visible,
+      .inj-toggle:focus-visible {
+        outline: 2px solid #a3e635;
+        outline-offset: 2px;
+      }
+      .cat-chip.active {
+        background: #a3e635;
+        border-color: #a3e635;
+        color: #000000;
+        box-shadow: 0 4px 16px rgba(163, 230, 53, 0.25);
+      }
+      .cat-chip-injury:hover {
+        border-color: rgba(239, 68, 68, 0.6);
+      }
+      .cat-chip-injury.active {
+        background: #ef4444;
+        border-color: #ef4444;
+        color: #ffffff;
+        box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3);
+      }
+      .light .cat-chip {
+        color: #4b5563;
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.15);
+      }
+      .light .cat-chip:hover {
+        color: #0f172a;
+        border-color: #65a30d;
+      }
+      .light .cat-chip.active {
+        background: #a3e635;
+        border-color: #84cc16;
+        color: #000000;
+      }
+      .light .cat-chip-injury:hover {
+        border-color: #dc2626;
+      }
+      .light .cat-chip-injury.active {
+        background: #ef4444;
+        border-color: #dc2626;
+        color: #ffffff;
+      }
+
+      /* ---------- injury toggle (admin, per player) ---------- */
+      .inj-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.6rem;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #9ca3af;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .inj-toggle .track {
+        position: relative;
+        width: 26px;
+        height: 14px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        transition: background-color 0.2s ease;
+      }
+      .inj-toggle .track::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #ffffff;
+        transition: transform 0.2s ease;
+      }
+      .inj-toggle.on {
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.12);
+        border-color: rgba(239, 68, 68, 0.45);
+      }
+      .inj-toggle.on .track {
+        background: #ef4444;
+      }
+      .inj-toggle.on .track::after {
+        transform: translateX(12px);
+      }
+      .light .inj-toggle {
+        color: #4b5563;
+        background: #ffffff;
+        border-color: rgba(15, 23, 42, 0.15);
+      }
+      .light .inj-toggle .track {
+        background: rgba(15, 23, 42, 0.22);
+      }
+      .light .inj-toggle.on {
+        color: #dc2626;
+        background: rgba(220, 38, 38, 0.1);
+        border-color: rgba(220, 38, 38, 0.4);
+      }
+      .light .inj-toggle.on .track {
+        background: #dc2626;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .inj-toggle .track,
+        .inj-toggle .track::after {
+          transition: none;
+        }
+      }
     </style>
   </head>
   <body
@@ -687,7 +827,7 @@
             ></div>
 
             <aside
-              class="glass-panel p-6 rounded-3xl space-y-4 lg:sticky lg:top-28 min-w-0"
+              class="glass-panel p-6 rounded-3xl space-y-4 lg:sticky lg:top-28 min-w-0 order-first lg:order-none"
             >
               <div class="flex items-center justify-between gap-2">
                 <h3
@@ -1532,15 +1672,51 @@
             <label class="block text-xs font-semibold text-gray-500 mb-1.5"
               >Category</label
             >
-            <select
-              id="newsCategoryInput"
-              class="w-full px-4 py-3 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-sm focus:outline-none focus:ring-2 focus:ring-maarifAccent transition dark:text-white text-gray-800"
+            <input type="hidden" id="newsCategoryInput" value="news" />
+            <div
+              id="newsCategoryChips"
+              class="grid grid-cols-2 gap-2"
+              role="radiogroup"
+              aria-label="Category"
             >
-              <option value="news">News</option>
-              <option value="match">Match Report</option>
-              <option value="injury">Injury Update</option>
-              <option value="announcement">Announcement</option>
-            </select>
+              <button
+                type="button"
+                role="radio"
+                data-cat="news"
+                class="cat-chip active"
+                aria-checked="true"
+              >
+                <i class="fa-solid fa-newspaper"></i><span>News</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                data-cat="match"
+                class="cat-chip"
+                aria-checked="false"
+              >
+                <i class="fa-solid fa-futbol"></i><span>Match Report</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                data-cat="injury"
+                class="cat-chip cat-chip-injury"
+                aria-checked="false"
+              >
+                <i class="fa-solid fa-kit-medical"></i
+                ><span>Injury Update</span>
+              </button>
+              <button
+                type="button"
+                role="radio"
+                data-cat="announcement"
+                class="cat-chip"
+                aria-checked="false"
+              >
+                <i class="fa-solid fa-bullhorn"></i><span>Announcement</span>
+              </button>
+            </div>
           </div>
           <div>
             <label class="block text-xs font-semibold text-gray-500 mb-1.5"
